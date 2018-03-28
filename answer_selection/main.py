@@ -1,38 +1,44 @@
+import torch
 import json
-from utils import get_qa_pair
-
-with open('./BioASQ-trainingDataset5b.txt', encoding='utf8') as f:
-    data = json.load(f)
-
-print('getting qa pair from data')
-qa_pair = get_qa_pair(data)
-print(qa_pair[0])
-
-print('adding spans into the qa_pair')
-qa_pair = add_span(qa_pair)
-print(qa_pair[0])
-print(qa_pair[0][1])
-for (snippet, spans) in zip(qa_pair[0][3], qa_pair[0][4]):
-    print(spans)
-    print(snippet)
-    for (start, end) in spans:
-        print(snippet[start:end + 1])
-
-print('getting bio word dictionary')
-bio_wdict = get_word_dict(qa_pair, bioclean)
-
-print('loading embedding vector for words')
-(word_vec_bio, word2ind_bio) = load_embed_bioasq(bio_wdict, vec_path='./vectors.txt', type_path='./types.txt')
-ind2word_bio = dict((v, k) for k, v in word2ind_bio.items())
-bio_qa_ind = word_to_ind(word2ind_bio, qa_pair, bioclean)
-
+import pandas as pd
+import numpy as np
+import random
+import nltk
+import re
+from collections import defaultdict
+from utils import get_qa_pair, add_span, get_word_dict, bioclean, text_to_list, squad_to_bioasq_format, flatten_span_list, formalize_data
+from model import BaselineModel
 from sklearn.model_selection import train_test_split
 
-train, test = train_test_split(bio_qa_ind, test_size=0.2, random_state=32)
-train, validate = train_test_split(train, test_size=0.2, random_state=32)
-print('flatten span list')
-train_flat = flattenSpanList(train)
-test_flat = flattenSpanList(test)
-validate_flat = flattenSpanList(validate)
-bio_qa_ind_flat = flattenSpanList(bio_qa_ind)
-print(bio_qa_ind_flat[0])
+
+if __name__ == '__main__':
+
+    with open('./data/BioASQ-trainingDataset5b.txt', encoding='utf8') as f:
+        data = json.load(f)
+
+    print('getting qa pair from data')
+    qa_pair = get_qa_pair(data)
+    # qa_pair = squad_to_bioasq_format(squad_data)
+
+    print('adding spans into the qa_pair')
+    qa_pair = add_span(qa_pair)
+    # (q, a, t, s, span_lst)
+    qa_pair = text_to_list(qa_pair)
+    # # Debugging span extraction
+    # for (snippet, spans) in zip(qa_pair[0][3], qa_pair[0][4]):
+    #     print (spans)
+    #     print (snippet)
+    #     for (start, end) in spans:
+    #         print (snippet[start:end + 1])
+
+    bioword_dict = get_word_dict(qa_pair, bioclean)
+    train, test = train_test_split(qa_pair, test_size=0.2, random_state=32)
+    train, validate = train_test_split(train, test_size=0.2, random_state=32)
+    train_flat = formalize_data(flatten_span_list(train), bioword_dict)
+    test_flat = formalize_data(flatten_span_list(test), bioword_dict)
+    validate_flat = formalize_data(flatten_span_list(validate), bioword_dict)
+
+    hidden_dim = 100
+    model = BaselineModel(hidden_dim, 200, len(bioword_dict))
+    model.load_embed_bioasq(bioword_dict, './data/vectors.txt', './data/types.txt')
+

@@ -43,7 +43,7 @@ class Sample:
     def __init__(self, input_dict, word_dict):
         self.q_id = input_dict['q_id']
         self.q_text = ' '.join(input_dict['q'])
-        self.a_text = [' '.join(answer) for answer in input_dict['ans_lst']]
+        self.a_text = [' '.join(answer) for ans_lst in input_dict['a'] for answer in ans_lst]
         self.t_text = ' '.join(input_dict['t'])
         self.snippet_text = ' '.join(input_dict['snippet'])
 
@@ -196,19 +196,7 @@ def squad_to_bioasq_format(data):
     return qa_pair
 
 
-def load_embed_bioasq(w_dct, vec_path, type_path, embedding):
-    print('loading embeddings...')
-    w2v_lst = defaultdict(list)
-    for word_line, vec_line in zip(vec_path, type_path):
-        word = word_line.strip('\n')
-        if word in w_dct:
-            vec = np.array(vec_line.strip('\n').split())
-            w2v_lst[word].append(vec)
 
-    for w, vec_lst in w2v_lst.items():
-        embedding[w_dct[w]] = np.mean(vec_lst, axis=0)
-
-    print('load {}/{} embeddings'.format(len(w2v_lst), len(w_dct)))
 
 
 q_id = 0
@@ -218,15 +206,19 @@ def flatten_span_list(qa_pair):
     global q_id;
     new_qa_pair = []
     for (q, a, t, s, span_lst) in qa_pair:
-        for (ans_lst, snippet, spans) in zip(a, s, span_lst):
+        for (snippet, spans) in zip(s, span_lst):
             for span in spans:
-                new_qa_pair.append([q, ans_lst, t, snippet, span, q_id])
+                new_qa_pair.append([q, a, t, snippet, span, q_id])
         q_id += 1
     return new_qa_pair
 
 
 def formalize_data(qa_pair, word_dict):
     formal_data = []
-    for (q, ans_lst, t, snippet, span, q_id) in qa_pair:
-        formal_data.append(Sample({'q': q, 'ans_lst': ans_lst, 't': t, 'snippet': snippet, 'span': span, 'q_id': q_id}, word_dict))
+    for (q, a, t, snippet, span, q_id) in qa_pair:
+        formal_data.append(Sample({'q': q, 'a': a, 't': t, 'snippet': snippet, 'span': span, 'q_id': q_id}, word_dict))
     return formal_data
+
+def evaluate(data):
+    for sample in data:
+        pass
