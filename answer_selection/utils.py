@@ -1,4 +1,5 @@
 import unicodedata
+from torch import LongTensor, FloatTensor, ByteTensor
 import numpy as np
 from nltk.tokenize import word_tokenize
 from collections import defaultdict
@@ -12,6 +13,9 @@ class Dictionary:
         dct['<NULL>'] = 0
         dct['<UNK>'] = 1
         self.dct = dct
+
+    def __len__(self):
+        return len(self.dct)
 
     def __contains__(self, item):
         item = Dictionary.normalize(item)
@@ -33,6 +37,19 @@ class Dictionary:
     @staticmethod
     def normalize(w):
         return unicodedata.normalize('NFD', w)
+
+
+class Sample:
+    def __init__(self, input_dict, word_dict):
+        self.q_id = input_dict['q_id']
+        self.q_text = ' '.join(input_dict['q'])
+        self.a_text = [' '.join(answer) for answer in input_dict['ans_lst']]
+        self.t_text = ' '.join(input_dict['t'])
+        self.snippet_text = ' '.join(input_dict['snippet'])
+
+        self.span = LongTensor(input_dict['span'])
+        self.q_words = LongTensor([word_dict[w] for w in input_dict['q']])
+        self.d_words = LongTensor([word_dict[w] for w in input_dict['snippet']])
 
 
 def get_qa_pair(data, q_types=['factoid']):
@@ -57,8 +74,8 @@ def get_qa_pair(data, q_types=['factoid']):
         dup_count = 0
         snippets = []
         for snippet in obj['snippets']:
-            snippet = snippet['text']
-            if snippet not in s:
+            snippet = separate_punctuation_by_space(snippet['text'])
+            if snippet not in snippets:
                 snippets.append(snippet)
             else:
                 dup_count += 1
@@ -99,6 +116,7 @@ def get_spans(a, snippet):
             # Convert them into positions in the word list
             span = [(len(snippet[:start].split(' ')) - 1, len(snippet[:end + 1].split(' ')) - 1) for (start, end) in
                     span]
+
             if len(span):
                 spans += span
     return spans
@@ -108,13 +126,27 @@ def add_span(qa_pair):
     new_qa_pair = []
     for (q, a, t, s) in qa_pair:
         new_s, new_span_lst = [], []
+        # one list of spans per snippet
         span_lst = [get_spans(a, snippet) for snippet in s]
         for (snippet, spans) in zip(s, span_lst):
             if len(spans):
                 new_s.append(snippet)
                 new_span_lst.append(spans)
-        new_qa_pair.append([q, a, t, new_s, new_span_lst])
+        if len(new_span_lst):
+            new_qa_pair.append([q, a, t, new_s, new_span_lst])
+    print('{}/{}={} question have exact answer in span'.format(len(new_qa_pair), len(qa_pair),
+                                                               len(new_qa_pair) / len(qa_pair)))
     return new_qa_pair
+
+
+def text_to_list(qa_pair):
+    result = []
+    for (q, a, t, s, span_lst) in qa_pair:
+        new_a = []
+        for ans_lst in a:
+            new_a.append([answer.split(' ') for answer in ans_lst])
+        result.append([q.split(' '), new_a, t, [snippet.split(' ') for snippet in s], span_lst])
+    return result
 
 
 def bioclean(t):
@@ -127,6 +159,7 @@ def bioclean(t):
 
 def get_word_dict(qa_pair, clean_func, dct=None):
     dct = Dictionary() if dct is None else dct
+    original_len = len(dct)
     for (q, a, t, s, span_lst) in qa_pair:
         for word in q:
             dct.add(clean_func(word))
@@ -137,7 +170,30 @@ def get_word_dict(qa_pair, clean_func, dct=None):
         for snippet in s:
             for word in snippet:
                 dct.add(clean_func(word))
+    print('vocabulary from {} to {}'.format(original_len, len(dct)))
     return dct
+
+
+# (q, a, t, s, span_lst)
+def squad_to_bioasq_format(data):
+    qa_pair = []
+    for domain in data['data']:
+        for paragraph in domain['paragraphs']:
+            s = [separate_punctuation_by_space(paragraph['context'])]
+            t = 'factoid'
+            # format: [{answers, question}, ...]
+            for qa in paragraph['qas']:
+                q = separate_punctuation_by_space(qa['question'])
+                a = []
+                answers = qa['answers']
+                for answer_dct in answers:
+                    answer = separate_punctuation_by_space(answer_dct['text'])
+                    if answer not in a:
+                        a.append(answer)
+                a = [a]
+                qa_pair.append([q, a, t, s])
+    print('questions count:', len(qa_pair))
+    return qa_pair
 
 
 def load_embed_bioasq(w_dct, vec_path, type_path, embedding):
@@ -155,10 +211,22 @@ def load_embed_bioasq(w_dct, vec_path, type_path, embedding):
     print('load {}/{} embeddings'.format(len(w2v_lst), len(w_dct)))
 
 
+q_id = 0
+
+
 def flatten_span_list(qa_pair):
+    global q_id;
     new_qa_pair = []
-    for (q, s, span_lst, t) in qa_pair:
-        for (snippet, spans) in zip(s, span_lst):
+    for (q, a, t, s, span_lst) in qa_pair:
+        for (ans_lst, snippet, spans) in zip(a, s, span_lst):
             for span in spans:
-                new_qa_pair.append([q, snippet, span, t])
+                new_qa_pair.append([q, ans_lst, t, snippet, span, q_id])
+        q_id += 1
     return new_qa_pair
+
+
+def formalize_data(qa_pair, word_dict):
+    formal_data = []
+    for (q, ans_lst, t, snippet, span, q_id) in qa_pair:
+        formal_data.append(Sample({'q': q, 'ans_lst': ans_lst, 't': t, 'snippet': snippet, 'span': span, 'q_id': q_id}, word_dict))
+    return formal_data
