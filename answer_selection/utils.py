@@ -1,4 +1,5 @@
 import unicodedata
+import torch
 from torch import LongTensor, FloatTensor, ByteTensor
 import numpy as np
 from nltk.tokenize import word_tokenize
@@ -40,16 +41,26 @@ class Dictionary:
 
 
 class Sample:
-    def __init__(self, input_dict, word_dict):
+    def __init__(self, input_dict, word_dict, char_dict):
         self.q_id = input_dict['q_id']
         self.q_text = ' '.join(input_dict['q'])
         self.a_text = [' '.join(answer) for ans_lst in input_dict['a'] for answer in ans_lst]
         self.t_text = ' '.join(input_dict['t'])
         self.snippet_text = ' '.join(input_dict['snippet'])
 
-        self.span = LongTensor(input_dict['span'])
-        self.q_words = LongTensor([word_dict[w] for w in input_dict['q']])
-        self.d_words = LongTensor([word_dict[w] for w in input_dict['snippet']])
+        self.span = input_dict['span']
+        self.q_words = [word_dict[w] for w in input_dict['q']]
+        self.d_words = [word_dict[w] for w in input_dict['snippet']]
+
+        q_chars = []
+        for w in input_dict['q']:
+            q_chars.append([char_dict[c] for c in w])
+        self.q_chars = q_chars
+
+        d_chars = []
+        for w in input_dict['snippet']:
+            d_chars.append([char_dict[c] for c in w])
+        self.d_chars = d_chars
 
 
 def get_qa_pair(data, q_types=['factoid']):
@@ -158,19 +169,38 @@ def bioclean(t):
 
 
 def get_word_dict(qa_pair, clean_func, dct=None):
+    def expand_dict(word_lst, dct, clean_func):
+        for word in word_lst:
+            dct.add(clean_func(word))
+
     dct = Dictionary() if dct is None else dct
     original_len = len(dct)
     for (q, a, t, s, span_lst) in qa_pair:
-        for word in q:
-            dct.add(clean_func(word))
+        expand_dict(q, dct, clean_func)
         for ans_lst in a:
-            for ans in ans_lst:
-                for word in ans:
-                    dct.add(clean_func(word))
+            for answer in ans_lst:
+                expand_dict(answer, dct, clean_func)
         for snippet in s:
-            for word in snippet:
-                dct.add(clean_func(word))
-    print('vocabulary from {} to {}'.format(original_len, len(dct)))
+            expand_dict(snippet, dct, clean_func)
+    print('word vocabulary from {} to {}'.format(original_len, len(dct)))
+    return dct
+
+
+def get_char_dict(qa_pair, dct=None):
+    def expand_dict(word_lst, dct):
+        for word in word_lst:
+            for c in word:
+                dct.add(c)
+
+    dct = Dictionary() if dct is None else dct
+    original_len = len(dct)
+    for (q, a, t, s, span_lst) in qa_pair:
+        expand_dict(q, dct)
+        for ans_lst in a:
+            expand_dict(ans_lst, dct)
+        for snippet in s:
+            expand_dict(snippet, dct)
+    print('char vocabulary from {} to {}'.format(original_len, len(dct)))
     return dct
 
 
@@ -196,9 +226,6 @@ def squad_to_bioasq_format(data):
     return qa_pair
 
 
-
-
-
 q_id = 0
 
 
@@ -213,12 +240,32 @@ def flatten_span_list(qa_pair):
     return new_qa_pair
 
 
-def formalize_data(qa_pair, word_dict):
+def formalize_data(qa_pair, word_dict, char_dict):
     formal_data = []
     for (q, a, t, snippet, span, q_id) in qa_pair:
-        formal_data.append(Sample({'q': q, 'a': a, 't': t, 'snippet': snippet, 'span': span, 'q_id': q_id}, word_dict))
+        formal_data.append(
+            Sample({'q': q, 'a': a, 't': t, 'snippet': snippet, 'span': span, 'q_id': q_id}, word_dict, char_dict))
     return formal_data
 
-def evaluate(data):
+
+def evaluate(data, model, dataset_name):
+    model.eval()
+    accuracy_lst = []
+    loss_lst = []
     for sample in data:
-        pass
+        q = sample.q_words
+        context = sample.d_words
+        q_char = sample.q_chars
+        d_char = sample.d_chars
+
+        span = sample.span
+        index = len(context) * span[0] + span[1]
+        pred = model(q, context, q_char, d_char)
+
+        loss = -torch.log(pred.index_select(1, torch.autograd.Variable(torch.cuda.LongTensor([index]))))
+
+        pred_index = np.argmax(pred[0].data.cpu())
+        accuracy_lst.append(pred_index == index)
+        loss_lst.append(loss.data.cpu()[0])
+    print(dataset_name, 'accuracy:', np.mean(accuracy_lst))
+    print(dataset_name, 'loss:', np.mean(loss_lst))

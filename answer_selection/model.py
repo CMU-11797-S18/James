@@ -2,16 +2,19 @@ import torch
 import torch.autograd as autograd
 from torch import LongTensor, FloatTensor, ByteTensor
 import torch.nn as nn
+from torch.autograd import Variable
 import torch.nn.functional as F
 from collections import defaultdict
 import numpy as np
+from layers import CharEmbed
 import torch.optim as optim
 
 torch.manual_seed(1)
 
 
 class BaselineModel(nn.Module):
-    def __init__(self, hidden_dim, embedding_dim, vocab_size, batch_size=1, num_layers=1):
+    def __init__(self, hidden_dim, embedding_dim, vocab_size, char_vocab_size, window_size=5, char_embed_dim=50,
+                 word_char_embed_dim=200, batch_size=1, num_layers=1):
         super(BaselineModel, self).__init__()
         self.batch_size = batch_size
         self.num_layers = num_layers
@@ -21,6 +24,10 @@ class BaselineModel(nn.Module):
         self.word_embeddings.weight.data.fill_(0)
         self.word_embeddings.weight.data[:2].normal_(0, 0.1)
 
+        self.char_embed = CharEmbed(char_vocab_size, window_size=window_size, embed_dim=char_embed_dim, output_dim=word_char_embed_dim)
+
+        #self.qlstm = nn.LSTM(embedding_dim + word_char_embed_dim, hidden_dim, bidirectional=True)
+        #self.clstm = nn.LSTM(embedding_dim + word_char_embed_dim, hidden_dim, bidirectional=True)
         self.qlstm = nn.LSTM(embedding_dim, hidden_dim, bidirectional=True)
         self.clstm = nn.LSTM(embedding_dim, hidden_dim, bidirectional=True)
 
@@ -66,22 +73,51 @@ class BaselineModel(nn.Module):
         # The axes semantics are (num_layers*direction_num, minibatch_size, hidden_dim)
         batch_size = self.batch_size
         num_layers = self.num_layers
-        return (autograd.Variable(torch.zeros(num_layers * 2, batch_size, self.hidden_dim).cuda()),
-                autograd.Variable(torch.zeros(num_layers * 2, batch_size, self.hidden_dim).cuda()))
+        return (Variable(torch.zeros(num_layers*2, batch_size, self.hidden_dim).cuda()),
+                Variable(torch.zeros(num_layers*2, batch_size, self.hidden_dim).cuda()))
 
-    def forward(self, question, context):
+    def forward(self, question, context, question_chars, context_chars):
+        question = Variable(torch.cuda.LongTensor([question]))
+        context = Variable(torch.cuda.LongTensor([context]))
+        question_chars = [question_chars]
+        context_chars = [context_chars]
+
+        # question_chars should be batch_size*seq_len*word_len
         self.qhidden = self.init_hidden()
         self.chidden = self.init_hidden()
 
-        qembeds = self.word_embeddings(autograd.Variable(torch.cuda.LongTensor([question])))
-        cembeds = self.word_embeddings(autograd.Variable(torch.cuda.LongTensor([context])))
+        # batch_size*seq_len*embed_dim
+        q_word_embeds = self.word_embeddings(question)
+        c_word_embeds = self.word_embeddings(context)
+
+        q_char_embed_lst = list()
+        for batch_idx in range(len(question_chars)):
+            batch_data = []
+            for i in range(len(question_chars[batch_idx])):
+                batch_data.append(self.char_embed(Variable(torch.cuda.LongTensor([question_chars[batch_idx][i]]))))
+            q_char_embed_lst.append(torch.cat(batch_data, dim=1))
+        q_char_embeds = torch.cat(q_char_embed_lst, dim=0)
+
+        c_char_embed_lst = list()
+        for batch_idx in range(len(context_chars)):
+            batch_data = []
+            for i in range(len(context_chars[batch_idx])):
+                batch_data.append(self.char_embed(Variable(torch.cuda.LongTensor([context_chars[batch_idx][i]]))))
+            c_char_embed_lst.append(torch.cat(batch_data, dim=1))
+        c_char_embeds = torch.cat(c_char_embed_lst, dim=0)
+
+        #qembeds = torch.cat([q_word_embeds, q_char_embeds], dim=2)
+        #cembeds = torch.cat([c_word_embeds, c_char_embeds], dim=2)
+        qembeds = q_word_embeds
+        cembeds = c_word_embeds
+
         # output : (seq_len, batch_size, hidden_size*num_directions)
         qlstm_out, self.qhidden = self.qlstm(
-            qembeds.view(len(question), 1, -1), self.qhidden)
+            qembeds.permute(1, 0, 2), self.qhidden)
         clstm_out, self.chidden = self.clstm(
-            cembeds.view(len(context), 1, -1), self.chidden)
+            cembeds.permute(1, 0, 2), self.chidden)
         #         # (batch_size, cseq_len, 2*hidden_size*num_directions)
-        #         clstm_attn_out = self.attnCombine(qlstm_out, clstm_out)
+        #         clstm_attn_out = self.attn_combine(qlstm_out, clstm_out)
 
         # (batch_size, hidden_size*num_directions, qseq_len)
         qlstm_out_tmp = qlstm_out.permute(1, 2, 0)
