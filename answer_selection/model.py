@@ -14,11 +14,12 @@ torch.manual_seed(1)
 
 class BaselineModel(nn.Module):
     def __init__(self, hidden_dim, embedding_dim, vocab_size, char_vocab_size, window_size=5, char_embed_dim=50,
-                 word_char_embed_dim=200, batch_size=1, num_layers=1):
+                 word_char_embed_dim=200, batch_size=1, num_layers=1, use_char_embed=True):
         super(BaselineModel, self).__init__()
         self.batch_size = batch_size
         self.num_layers = num_layers
         self.hidden_dim = hidden_dim
+        self.use_char_embed = use_char_embed
 
         self.word_embeddings = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
         self.word_embeddings.weight.data.fill_(0)
@@ -26,10 +27,12 @@ class BaselineModel(nn.Module):
 
         self.char_embed = CharEmbed(char_vocab_size, window_size=window_size, embed_dim=char_embed_dim, output_dim=word_char_embed_dim)
 
-        #self.qlstm = nn.LSTM(embedding_dim + word_char_embed_dim, hidden_dim, bidirectional=True)
-        #self.clstm = nn.LSTM(embedding_dim + word_char_embed_dim, hidden_dim, bidirectional=True)
-        self.qlstm = nn.LSTM(embedding_dim, hidden_dim, bidirectional=True)
-        self.clstm = nn.LSTM(embedding_dim, hidden_dim, bidirectional=True)
+        embed_size = embedding_dim
+        if use_char_embed:
+            embed_size += word_char_embed_dim
+
+        self.qlstm = nn.LSTM(embed_size, hidden_dim, bidirectional=True)
+        self.clstm = nn.LSTM(embed_size, hidden_dim, bidirectional=True)
 
         # The linear layer that maps from hidden state space to tag space
 
@@ -106,31 +109,21 @@ class BaselineModel(nn.Module):
             c_char_embed_lst.append(torch.cat(batch_data, dim=1))
         c_char_embeds = torch.cat(c_char_embed_lst, dim=0)
 
-        #qembeds = torch.cat([q_word_embeds, q_char_embeds], dim=2)
-        #cembeds = torch.cat([c_word_embeds, c_char_embeds], dim=2)
-        qembeds = q_word_embeds
-        cembeds = c_word_embeds
+        if self.use_char_embed:
+            qembeds = torch.cat([q_word_embeds, q_char_embeds], dim=2)
+            cembeds = torch.cat([c_word_embeds, c_char_embeds], dim=2)
+        else:
+            qembeds = q_word_embeds
+            cembeds = c_word_embeds
 
         # output : (seq_len, batch_size, hidden_size*num_directions)
         qlstm_out, self.qhidden = self.qlstm(
             qembeds.permute(1, 0, 2), self.qhidden)
         clstm_out, self.chidden = self.clstm(
             cembeds.permute(1, 0, 2), self.chidden)
-        #         # (batch_size, cseq_len, 2*hidden_size*num_directions)
-        #         clstm_attn_out = self.attn_combine(qlstm_out, clstm_out)
 
-        # (batch_size, hidden_size*num_directions, qseq_len)
-        qlstm_out_tmp = qlstm_out.permute(1, 2, 0)
-        # (batch_size, cseq_len, hidden_size*num_directions)
-        clstm_out_tmp = clstm_out.permute(1, 0, 2)
-        # (batch_size, cseq_len, qseq_len)
-        attn_weights = F.softmax(torch.bmm(clstm_out_tmp, qlstm_out_tmp), dim=2)
-        # (batch_size, qseq_len, hidden_size*num_directions)
-        qlstm_out_tmp2 = qlstm_out.permute(1, 0, 2)
-        # (batch_size, cseq_len, hidden_size*num_directions)
-        attn_vec = torch.bmm(attn_weights, qlstm_out_tmp2)
-        clstm_attn_out = torch.cat((clstm_out_tmp, attn_vec), dim=2)
         # (batch_size, cseq_len, 2*hidden_size*num_directions)
+        clstm_attn_out = self.attn_combine(qlstm_out, clstm_out)
 
         # (batch_size, cseq_len, 2*hidden_size*num_directions)
         end_space = self.out2end(clstm_attn_out)
@@ -140,7 +133,13 @@ class BaselineModel(nn.Module):
         # (batch_size, cseq_len, 1)
         start_prob = F.sigmoid(self.out2start(clstm_attn_out))
         # (batch_size, cseq_len, cseq_len)
-        end_prob = F.softmax(torch.bmm(end_space, clstm_attn_out_tmp), dim=2)
+        end_weight = torch.bmm(end_space, clstm_attn_out_tmp)
+        end_constraint = torch.cuda.FloatTensor(end_weight.size()).fill_(0)
+        for i in range(1, end_weight.size(1)):
+            end_constraint[:, i, :i].fill_(-float('inf'))
+        end_weight += Variable(end_constraint, requires_grad=False)
+
+        end_prob = F.softmax(end_weight, dim=2)
 
         # (batch_size, cseq_len, cseq_len)
         span_prob = end_prob * start_prob

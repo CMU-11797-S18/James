@@ -262,7 +262,7 @@ def evaluate(data, model, dataset_name):
         index = len(context) * span[0] + span[1]
         pred = model(q, context, q_char, d_char)
 
-        loss = -torch.log(pred.index_select(1, torch.autograd.Variable(torch.cuda.LongTensor([index]))))
+        loss = -torch.log(pred.index_select(1, torch.autograd.Variable(torch.cuda.LongTensor([index]), requires_grad=False)))
 
         pred_index = np.argmax(pred[0].data.cpu())
         accuracy_lst.append(pred_index == index)

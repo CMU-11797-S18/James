@@ -1,12 +1,14 @@
 import torch
 import json
+import time
 import pandas as pd
 import numpy as np
 import random
 import nltk
 import re
-from collections import defaultdict
-from utils import get_qa_pair, add_span, get_word_dict, bioclean, text_to_list, squad_to_bioasq_format, flatten_span_list, formalize_data
+from utils import get_qa_pair, add_span, get_word_dict, bioclean, text_to_list, squad_to_bioasq_format
+from utils import evaluate, flatten_span_list, formalize_data, get_char_dict
+
 from model import BaselineModel
 from sklearn.model_selection import train_test_split
 
@@ -30,13 +32,14 @@ if __name__ == '__main__':
     #         print (snippet[start:end + 1])
 
     bioword_dict = get_word_dict(qa_pair, bioclean)
+    char_dict = get_char_dict(qa_pair)
+
     train, test = train_test_split(qa_pair, test_size=0.2, random_state=32)
     train, validate = train_test_split(train, test_size=0.2, random_state=32)
-    train_flat = formalize_data(flatten_span_list(train), bioword_dict)
-    test_flat = formalize_data(flatten_span_list(test), bioword_dict)
-    validate_flat = formalize_data(flatten_span_list(validate), bioword_dict)
+    train_flat = formalize_data(flatten_span_list(train), bioword_dict, char_dict)
+    test_flat = formalize_data(flatten_span_list(test), bioword_dict, char_dict)
+    validate_flat = formalize_data(flatten_span_list(validate), bioword_dict, char_dict)
 
-    import time
 
     torch.manual_seed(1)
     random.seed(1)
@@ -44,44 +47,28 @@ if __name__ == '__main__':
 
     epoch_num = 50
     hidden_dim = 100
-    model = BaselineModel(hidden_dim, 200, len(bioword_dict))
+    model = BaselineModel(hidden_dim, 200, len(bioword_dict), len(char_dict))
     model.cuda()
     model.load_embed_bioasq(bioword_dict, './data/vectors.txt', './data/types.txt')
-    optimizer = torch.optim.SGD(model.parameters(), lr=1e-2, momentum=0.9)
+    optimizer = torch.optim.SGD(model.parameters(), lr=1e-4, momentum=0.9)
 
-    dev_acc = []
-    dev_loss = []
-    for sample in squad_validate_flat:
-        q = sample.q_words.numpy().tolist()
-        context = sample.d_words.numpy().tolist()
-        span = sample.span
-        index = len(context) * span[0] + span[1]
-        pred = model(q, context)
-
-        loss = -torch.log(pred.index_select(1, torch.autograd.Variable(torch.cuda.LongTensor([index]))))
-
-        pred_index = np.argmax(pred[0].data.cpu())
-        dev_acc.append(pred_index == index)
-        dev_loss.append(loss.data.cpu()[0])
-    print('validation acc:', np.mean(dev_acc))
-    print('validation loss:', np.mean(dev_loss))
+    evaluate(validate_flat, model, 'validation')
+    start = time.time()
 
     for epoch in range(epoch_num):
         print('epoch:', epoch)
         model.train()
-        # random.shuffle(squad_train_flat)
+        # random.shuffle(train_flat)
 
         train_acc = []
         train_loss = []
-        for sample in squad_train_flat:
-            q = sample.q_words.numpy().tolist()
-            context = sample.d_words.numpy().tolist()
+        for sample in train_flat:
             span = sample.span
-            index = len(context) * span[0] + span[1]
+            index = len(sample.d_words) * span[0] + span[1]
 
             optimizer.zero_grad()
-            pred = model(q, context)
-            loss = -torch.log(pred.index_select(1, torch.autograd.Variable(torch.cuda.LongTensor([index]))))
+            pred = model(sample.q_words, sample.d_words, sample.q_chars, sample.d_chars)
+            loss = -torch.log(pred.index_select(1, torch.autograd.Variable(torch.cuda.LongTensor([index]), requires_grad=False)))
             loss.backward()
 
             pred_index = np.argmax(pred[0].data.cpu())
@@ -92,43 +79,7 @@ if __name__ == '__main__':
         print('train loss:', np.mean(train_loss))
         print('train acc:', np.mean(train_acc))
 
-        model.eval()
-        dev_acc = []
-        dev_loss = []
-        for sample in squad_validate_flat:
-            q = sample.q_words.numpy().tolist()
-            context = sample.d_words.numpy().tolist()
-            span = sample.span
-            index = len(context) * span[0] + span[1]
-            pred = model(q, context)
-
-            loss = -torch.log(pred.index_select(1, torch.autograd.Variable(torch.cuda.LongTensor([index]))))
-
-            pred_index = np.argmax(pred[0].data.cpu())
-
-            pred_span = (pred_index // len(context), pred_index % len(context))
-
-            dev_acc.append(pred_index == index)
-            dev_loss.append(loss.data.cpu()[0])
-
-        print('validation acc:', np.mean(dev_acc))
-        print('validation loss:', np.mean(dev_loss))
-
-        model.eval()
-        test_acc = []
-        test_loss = []
-        for sample in squad_test_flat:
-            q = sample.q_words.numpy().tolist()
-            context = sample.d_words.numpy().tolist()
-            span = sample.span
-            index = len(context) * span[0] + span[1]
-            pred = model(q, context)
-
-            loss = -torch.log(pred.index_select(1, torch.autograd.Variable(torch.cuda.LongTensor([index]))))
-
-            pred_index = np.argmax(pred[0].data.cpu())
-            test_acc.append(pred_index == index)
-            test_loss.append(loss.data.cpu()[0])
-        print('test acc:', np.mean(test_acc))
-        print('test loss:', np.mean(test_loss))
+        evaluate(validate_flat, model, 'validation')
+        evaluate(test_flat, model, 'test')
+        print('time elapsed:', time.time() - start)
 
