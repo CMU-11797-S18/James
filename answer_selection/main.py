@@ -1,4 +1,5 @@
 import torch
+import pickle
 import json
 import time
 import pandas as pd
@@ -52,7 +53,7 @@ if __name__ == '__main__':
     model.load_embed_bioasq(bioword_dict, './data/vectors.txt', './data/types.txt')
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-4, momentum=0.9)
 
-    evaluate(validate_flat, model, 'validation')
+    evaluate(validate_flat, model, 'validation', bioword_dict, char_dict)
     start = time.time()
 
     for epoch in range(epoch_num):
@@ -79,7 +80,20 @@ if __name__ == '__main__':
         print('train loss:', np.mean(train_loss))
         print('train acc:', np.mean(train_acc))
 
-        evaluate(validate_flat, model, 'validation')
-        evaluate(test_flat, model, 'test')
+        evaluate(train_flat, model, 'train', bioword_dict, char_dict)
+        evaluate(validate_flat, model, 'validation', bioword_dict, char_dict)
+        evaluate(test_flat, model, 'test', bioword_dict, char_dict)
         print('time elapsed:', time.time() - start)
+
+        if epoch == 13:
+            torch.save(model, './model')
+
+            with open('word_dict.pkl', 'wb') as output:
+                pickle.dump(bioword_dict, output)
+
+            with open('char_dict.pkl', 'wb') as output:
+                pickle.dump(char_dict, output)
+
+            break
+
 

@@ -7,6 +7,12 @@ from collections import defaultdict
 import re
 
 
+def get_chars_ind_lst(char_dict, word_lst):
+    chars = []
+    for w in word_lst:
+        chars.append([char_dict[c] for c in w])
+    return chars
+
 class Dictionary:
     def __init__(self):
         dct = dict()
@@ -52,15 +58,8 @@ class Sample:
         self.q_words = [word_dict[w] for w in input_dict['q']]
         self.d_words = [word_dict[w] for w in input_dict['snippet']]
 
-        q_chars = []
-        for w in input_dict['q']:
-            q_chars.append([char_dict[c] for c in w])
-        self.q_chars = q_chars
-
-        d_chars = []
-        for w in input_dict['snippet']:
-            d_chars.append([char_dict[c] for c in w])
-        self.d_chars = d_chars
+        self.q_chars = get_chars_ind_lst(char_dict, input_dict['q'])
+        self.d_chars = get_chars_ind_lst(char_dict, input_dict['snippet'])
 
 
 def get_qa_pair(data, q_types=['factoid']):
@@ -248,7 +247,9 @@ def formalize_data(qa_pair, word_dict, char_dict):
     return formal_data
 
 
-def evaluate(data, model, dataset_name):
+eval_id = 0
+
+def evaluate(data, model, dataset_name, word_dict, char_dict):
     model.eval()
     accuracy_lst = []
     loss_lst = []
@@ -267,5 +268,72 @@ def evaluate(data, model, dataset_name):
         pred_index = np.argmax(pred[0].data.cpu())
         accuracy_lst.append(pred_index == index)
         loss_lst.append(loss.data.cpu()[0])
+
     print(dataset_name, 'accuracy:', np.mean(accuracy_lst))
     print(dataset_name, 'loss:', np.mean(loss_lst))
+
+    sorted_data = sorted(data, key=lambda s: s.q_id)
+    question_list = []
+    snippets_list = []
+    answers_list = []
+
+    last_q_id = None
+    last_snippets = set()
+    last_questions = ''
+    last_answers = set()
+    for sample in sorted_data:
+        q_id = sample.q_id
+        if q_id != last_q_id:
+            if last_q_id is not None:
+                question_list.append(last_questions)
+                snippets_list.append(last_snippets)
+                answers_list.append(last_answers)
+            last_questions, last_snippets, last_answers = '', set(), set()
+
+        last_q_id = q_id
+        span = sample.span
+        last_questions = sample.q_text
+        last_snippets.add(sample.snippet_text)
+        last_answers.add(' '.join(sample.snippet_text.split(' ')[span[0]:span[1] + 1]))
+
+    question_list.append(last_questions)
+    snippets_list.append(last_snippets)
+    answers_list.append(last_answers)
+
+    best_answer_prob_list, best_answer_list = [], []
+    accuracy_lst = []
+    answer_comparison = []
+    for question, snippets, answers in zip(question_list, snippets_list, answers_list):
+        best_answer, best_answer_prob = predict(model, question, snippets, word_dict, char_dict)
+        best_answer_prob_list.append(best_answer_prob)
+        best_answer_list.append(best_answer)
+        accuracy_lst.append(best_answer in answers)
+        answer_comparison.append([best_answer, answers])
+    print(dataset_name, 'pick one accuracy:{}/{}={}'.format(np.sum(accuracy_lst),len(accuracy_lst), np.mean(accuracy_lst)))
+
+    global eval_id
+    eval_id += 1
+    np.save('comparison_{}'.format(eval_id), answer_comparison)
+
+
+
+def predict(model, question, snippets, word_dict, char_dict):
+    best_answer = None
+    best_answer_prob = None
+
+    q_words = [word_dict[w] for w in word_tokenize(question)]
+    q_chars = get_chars_ind_lst(char_dict, word_tokenize(question))
+    for snippet in snippets:
+        d_words = [word_dict[w] for w in word_tokenize(snippet)]
+        d_chars = get_chars_ind_lst(char_dict, word_tokenize(snippet))
+        pred = model(q_words, d_words, q_chars, d_chars)
+        pred_prob = np.max(pred[0].data.cpu().numpy())
+        pred_index = np.argmax(pred[0].data.cpu())
+        start, end = pred_index//len(d_words), pred_index%len(d_words)
+        if best_answer_prob is None or pred_prob > best_answer_prob:
+            best_answer_prob = pred_prob
+            best_answer = ' '.join(word_tokenize(snippet)[start:end + 1])
+
+    return best_answer, best_answer_prob
+
+
