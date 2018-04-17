@@ -4,6 +4,7 @@ import sys
 import json
 import copy
 from nltk.tokenize import sent_tokenize, word_tokenize
+from SpanSelector import SpanSelector
 import dynet as dy
 
 from Expander import Expander
@@ -84,13 +85,15 @@ logger = logging.getLogger('bioAsqLogger')
 
 
 class Pipeline(object):
-    def __init__(self, filePath, expanderInstance, biRankerInstance, orderInstance, fusionInstance, tilerInstance):
+    def __init__(self, filePath, expanderInstance, biRankerInstance, orderInstance, fusionInstance,
+                 tilerInstance, spanSelectorInstance):
         self.filePath = filePath
         self.expanderInstance = expanderInstance
         self.biRankerInstance = biRankerInstance
         self.orderInstance = orderInstance
         self.fusionInstance = fusionInstance
         self.tilerInstance = tilerInstance
+        self.spanSelectorInstance =  spanSelectorInstance
 
     def getSummaries(self):
 
@@ -159,7 +162,6 @@ class Pipeline(object):
             logger.info('Retrieved ranked list of sentences...')
 
 
-            #ExpansiontoOriginal = {value: key for key, value in OriginaltoExpansion.iteritems()}
             rankedSentencesListOriginal = []
             rankedSnippets = []
             print question['body']
@@ -172,9 +174,9 @@ class Pipeline(object):
                     pass
 
             #EXECUTION OF TILING
-            tiler_info = {'max_length': 200, 'max_tokens': 200, 'k': 2, 'max_iter': 20}
-            orderedList = self.orderInstance.orderSentences(rankedSentencesListOriginal, rankedSnippets, tiler_info)
-            fusedList = self.fusionInstance.tileSentences(orderedList, 200)
+            #tiler_info = {'max_length': 200, 'max_tokens': 200, 'k': 2, 'max_iter': 20}
+            #orderedList = self.orderInstance.orderSentences(rankedSentencesListOriginal, rankedSnippets, tiler_info)
+            #fusedList = self.fusionInstance.tileSentences(orderedList, 200)
             logger.info('Tiling sentences to get alternative summary...')
             
             #EXECUTION OF EVAULATION (To be done)
@@ -182,10 +184,13 @@ class Pipeline(object):
             #goldIdealAnswer, r2, rsu = evaluatorInstance.calculateRouge(question['body'], finalSummary)
 
             #uncomment the following 3 lines for fusion
-            concat_inst = Concatenation()
-            finalSummary = concat_inst.tileSentences(fusedList, 200) #pred_length*5
+            #concat_inst = Concatenation()
+            #finalSummary = concat_inst.tileSentences(fusedList, 200) #pred_length*5
 
-            question['ideal_answer'] = finalSummary
+            #question['ideal_answer'] = finalSummary
+
+            exact_answer, exact_answer_prob = self.spanSelectorInstance.predict(question['body'], rankedSentencesList[0])
+            question['exact_answer'] = exact_answer
 
             AnswerQuestion = question
             allAnswerQuestion.append(AnswerQuestion)
@@ -202,7 +207,9 @@ if __name__ == '__main__':
     orderInstance = MajorityCluster()
     fusionInstance = Fusion()
     tilerInstance = Concatenation()
-    pipelineInstance = Pipeline(filePath, expanderInstance, biRankerInstance, orderInstance, fusionInstance ,tilerInstance)
+    spanSelectorInstance = SpanSelector()
+    pipelineInstance = Pipeline(filePath, expanderInstance, biRankerInstance, orderInstance, fusionInstance ,tilerInstance,
+                                spanSelectorInstance)
     idealAnswerJson = {}
     idealAnswerJson['questions'] = pipelineInstance.getSummaries()
     with open('ordered_fusion_dropout_corrected10.json', 'w') as outfile:
