@@ -173,9 +173,9 @@ class Pipeline(object):
                     pass
 
             #EXECUTION OF TILING
-            #tiler_info = {'max_length': 200, 'max_tokens': 200, 'k': 2, 'max_iter': 20}
-            #orderedList = self.orderInstance.orderSentences(rankedSentencesListOriginal, rankedSnippets, tiler_info)
-            #fusedList = orderedList
+            tiler_info = {'max_length': 200, 'max_tokens': 200, 'k': 2, 'max_iter': 20}
+            orderedList = self.orderInstance.orderSentences(rankedSentencesListOriginal, rankedSnippets, tiler_info)
+            fusedList = orderedList
             #fusedList = self.fusionInstance.tileSentences(orderedList, 200)
             logger.info('Tiling sentences to get alternative summary...')
             
@@ -184,15 +184,14 @@ class Pipeline(object):
             #goldIdealAnswer, r2, rsu = evaluatorInstance.calculateRouge(question['body'], finalSummary)
 
             #uncomment the following 3 lines for fusion
-            #concat_inst = Concatenation()
-            #finalSummary = concat_inst.tileSentences(fusedList, 200) #pred_length*5
+            concat_inst = Concatenation()
+            finalSummary = concat_inst.tileSentences(fusedList, 200) #pred_length*5
 
-            #question['ideal_answer'] = finalSummary
-            #print (finalSummary)
+            question['ideal_answer'] = finalSummary
+            print (finalSummary)
             
-            candidateSentences = rankedSentencesList[:1]
+            candidateSentences = fusedList
             exact_answer, exact_answer_prob = self.spanSelectorInstance.predict(question['body'], candidateSentences)
-            #exact_answer = exact_answer.decode('utf-8')
             if pred_cat != 'summary':
                 if pred_cat in ['list', 'factoid']:
                     question['exact_answer'] = [exact_answer]
@@ -212,7 +211,7 @@ if __name__ == '__main__':
     expanderInstance = NoExpander()
     biRankerInstance = CoreMMR()
     #m = dy.ParameterCollection()
-    #biRankerInstance = MaLSTMScorer(m, "/home/ubuntu/model_dropout_corrected10", "/home/ubuntu/model_vocab.txt")
+    #biRankerInstance = MaLSTMScorer(m, "/home/ubuntu/model_dropout_corrected20", "/home/ubuntu/model_vocab.txt")
     orderInstance = MajorityCluster()
     fusionInstance = Fusion()
     tilerInstance = Concatenation()
@@ -221,6 +220,6 @@ if __name__ == '__main__':
                                 spanSelectorInstance)
     idealAnswerJson = {}
     idealAnswerJson['questions'] = pipelineInstance.getSummaries()
-    with open('ordered_baseline_answer_selection.json', 'w') as outfile:
+    with open('ordered_MaLSTM_answer_selection.json', 'w') as outfile:
         json.dump(idealAnswerJson, outfile)
     #print json.dumps(idealAnswerJson)

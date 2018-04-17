@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 import unicodedata
+import json
 import torch
 from torch import LongTensor, FloatTensor, ByteTensor
 import numpy as np
@@ -337,4 +338,20 @@ def predict(model, question, snippets, word_dict, char_dict):
 
     return best_answer, best_answer_prob
 
+
+def get_accuracy(all_path='./input/BioASQ-trainingDataset5b.json',
+        pred_path='./ordered_baseline_answer_selection.json'):
+    all_qa = get_qa_pair(json.load(open(all_path)))
+    pred_qa = get_qa_pair(json.load(open(pred_path)))
+    questions = [x[0] for x in pred_qa]
+    gold_qa = filter(lambda q: q[0] in questions, all_qa)
+    count = 0
+    for pred_q in pred_qa:
+        ques = pred_q[0]
+        ans = pred_q[1][0][0]
+        for gold_q in gold_qa:
+            if gold_q[0] == ques:
+                count += ans in gold_q[1][0]
+                break
+    print ('accuracy:', count/float(len(questions)))
 
