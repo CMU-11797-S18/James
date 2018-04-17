@@ -155,8 +155,6 @@ class Pipeline(object):
 
 
             #EXECUTION OF ONE OF BIRANKERS
-            #rankedSentencesList = self.biRankerInstance.getRankedList(modifiedQuestion)
-            #rankedSentencesList = self.biRankerInstance.getRankedList(question)
             rankedSentencesList = self.biRankerInstance.getRankedList(question)
             logger.info('Retrieved ranked list of sentences...')
 
@@ -185,12 +183,7 @@ class Pipeline(object):
 
             #uncomment the following 3 lines for fusion
             concat_inst = Concatenation()
-            #finalSummary = concat_inst.tileSentences(rankedSentencesList, pred_length) #pred_length*5
             finalSummary = concat_inst.tileSentences(fusedList, 200) #pred_length*5
-            #baseline_summary = concat_inst.tileSentences(rankedSentencesListOriginal, pred_length)
-            #finalSummary = EvaluatePrecision.betterAnswer(baseline_summary, fused_Summary, question['body'])
-
-            #logger.info('Choosing better summary ...')
 
             question['ideal_answer'] = finalSummary
 
@@ -202,21 +195,14 @@ class Pipeline(object):
 
 if __name__ == '__main__':
     filePath = sys.argv[1]
-    #filePath = "../input/BioASQ-trainingDataset5b.json"
     expanderInstance = NoExpander()
-    #biRankerInstance = CoreMMR()
-    #biRankerInstance = SoftMMR()
-    m = dy.ParameterCollection()
-    biRankerInstance = MaLSTMScorer(m, "/home/ubuntu/model_dropout_corrected10", "/home/ubuntu/model_vocab.txt")
-    #biRankerInstance = BiLSTMScorer(m, "/home/ubuntu/bi_lstm_model", "/home/ubuntu/model_vocab.txt")
-    #biRankerInstance = LSTMScorer(m, "/home/ubuntu/model_ind", "/home/ubuntu/model_vocab.txt")
+    biRankerInstance = CoreMMR()
+    #m = dy.ParameterCollection()
+    #biRankerInstance = MaLSTMScorer(m, "/home/ubuntu/model_dropout_corrected10", "/home/ubuntu/model_vocab.txt")
     orderInstance = MajorityCluster()
     fusionInstance = Fusion()
     tilerInstance = Concatenation()
-    #tilerInstance = MajorityOrder()
-    #tilerInstance = KMeansSimilarityOrderer()
     pipelineInstance = Pipeline(filePath, expanderInstance, biRankerInstance, orderInstance, fusionInstance ,tilerInstance)
-    #pipelineInstance = Pipeline(filePath)
     idealAnswerJson = {}
     idealAnswerJson['questions'] = pipelineInstance.getSummaries()
     with open('ordered_fusion_dropout_corrected10.json', 'w') as outfile:
