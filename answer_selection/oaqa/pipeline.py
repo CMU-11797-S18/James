@@ -1,12 +1,10 @@
 from flask import Flask, request, abort, render_template
 from flask import jsonify, render_template
-from utils import predict
-import pickle
-import torch
 import sys
 import json
 import copy
 from nltk.tokenize import sent_tokenize, word_tokenize
+import dynet as dy
 
 from Expander import Expander
 from NoExpander import NoExpander
@@ -17,6 +15,8 @@ from BiRanker import BiRanker
 from CoreMMR import CoreMMR
 from SoftMMR import SoftMMR
 from HardMMR import HardMMR
+from MaLSTMScorer import MaLSTMScorer
+from BiLSTMScorer import BiLSTMScorer
 
 from Tiler import Tiler
 from Concatenation import Concatenation
@@ -50,25 +50,47 @@ Running the code:
 $> python pipeline.py ./input/phaseB_4b_04.json > submission.json
 '''
 
+#logging.config.fileConfig('logging.ini')
 
+'''
+# create logger with 'spam_application'
+logger = logging.getLogger('bioasq')
+logger.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('bioAsq.log')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+# create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+# add the handlers to the logger
+logger.addHandler(fh)
+logger.addHandler(ch)
+
+logging.basicConfig(
+    level = logging.DEBUG,
+    format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename = 'bioAsq.log',
+    filemode = 'w'
+)
+'''
+
+#logging.config.fileConfig('logging.ini')
 logging.config.fileConfig('logging.ini')
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger('bioAsqLogger')
 
 
 class Pipeline(object):
-    def __init__(self, filePath, expanderInstance, biRankerInstance, 
-            orderInstance, fusionInstance, tilerInstance, answerExtractor,
-            word_dict, char_dict):
+    def __init__(self, filePath, expanderInstance, biRankerInstance, orderInstance, fusionInstance, tilerInstance):
         self.filePath = filePath
         self.expanderInstance = expanderInstance
         self.biRankerInstance = biRankerInstance
         self.orderInstance = orderInstance
         self.fusionInstance = fusionInstance
         self.tilerInstance = tilerInstance
-        self.answerExtractor = answerExtractor
-        self.word_dict = word_dict
-        self.char_dict = char_dict
 
     def getSummaries(self):
 
@@ -104,8 +126,6 @@ class Pipeline(object):
             else:
                 pass
 
-            if pred_cat!='factoid':
-                continue
 
             modifiedQuestion = copy.copy(question)
 
@@ -114,9 +134,7 @@ class Pipeline(object):
 
             #EXECUTIONS OF EXPANSIONS
             #expansion on question body i.e, the text in the question
-            #expandedQuestion = self.expanderInstance.getExpansions(question['body'])
-            if len(question['snippets']) == 0:
-                continue
+            expandedQuestion = self.expanderInstance.getExpansions(question['body'])
 
             #expansion on every sentence in each of the snippets
             expandedSnippets = []
@@ -131,11 +149,14 @@ class Pipeline(object):
                 expandedSnippet['text'] = expandedSentences
                 expandedSnippets.append(expandedSnippet)
 
+            modifiedQuestion['snippets'] = expandedSnippets
+            modifiedQuestion['body'] = expandedQuestion
             logger.info('Updated the question with expander output...')
 
 
             #EXECUTION OF ONE OF BIRANKERS
             #rankedSentencesList = self.biRankerInstance.getRankedList(modifiedQuestion)
+            #rankedSentencesList = self.biRankerInstance.getRankedList(question)
             rankedSentencesList = self.biRankerInstance.getRankedList(question)
             logger.info('Retrieved ranked list of sentences...')
 
@@ -143,7 +164,9 @@ class Pipeline(object):
             #ExpansiontoOriginal = {value: key for key, value in OriginaltoExpansion.iteritems()}
             rankedSentencesListOriginal = []
             rankedSnippets = []
+            print question['body']
             for sentence in rankedSentencesList:
+                print sentence
                 try:
                     rankedSentencesListOriginal.append(ExpansiontoOriginal[sentence.strip()])
                     rankedSnippets.append(SentencetoSnippet[sentence.strip()])
@@ -153,46 +176,49 @@ class Pipeline(object):
             #EXECUTION OF TILING
             tiler_info = {'max_length': 200, 'max_tokens': 200, 'k': 2, 'max_iter': 20}
             orderedList = self.orderInstance.orderSentences(rankedSentencesListOriginal, rankedSnippets, tiler_info)
-            best_answer, best_answer_prob = predict(model, question['body'], [orderedList[0]], word_dict, char_dict)
-
-            #fusedList = self.fusionInstance.tileSentences(orderedList, 200)
-            #print ('fusedList:')
-            #print (fusedList)
-            #logger.info('Tiling sentences to get alternative summary...')
+            fusedList = self.fusionInstance.tileSentences(orderedList, 200)
+            logger.info('Tiling sentences to get alternative summary...')
             
+            #EXECUTION OF EVAULATION (To be done)
+            #evaluatorInstance = Evaluator()
+            #goldIdealAnswer, r2, rsu = evaluatorInstance.calculateRouge(question['body'], finalSummary)
+
             #uncomment the following 3 lines for fusion
-            #concat_inst = Concatenation()
-            #finalSummary = concat_inst.tileSentences(fusedList, 200) #pred_length*5
-            #print ('finalSummary:')
-            #print (finalSummary)
+            concat_inst = Concatenation()
+            #finalSummary = concat_inst.tileSentences(rankedSentencesList, pred_length) #pred_length*5
+            finalSummary = concat_inst.tileSentences(fusedList, 200) #pred_length*5
+            #baseline_summary = concat_inst.tileSentences(rankedSentencesListOriginal, pred_length)
+            #finalSummary = EvaluatePrecision.betterAnswer(baseline_summary, fused_Summary, question['body'])
+
             #logger.info('Choosing better summary ...')
 
-            question['exact_answer'] = best_answer 
+            question['ideal_answer'] = finalSummary
 
             AnswerQuestion = question
             allAnswerQuestion.append(AnswerQuestion)
             logger.info('Inserted ideal answer into the json dictionary')
-            print ('Adding ideal answer to json dictionary')
         metamapInstance.stopMetaMap()
         return allAnswerQuestion
 
 if __name__ == '__main__':
     filePath = sys.argv[1]
-    word_dict = pickle.load(sys.argv[2])
-    char_dict = pickle.load(sys.argv[3])
-    model = torch.load(sys.argv[4])
     #filePath = "../input/BioASQ-trainingDataset5b.json"
     expanderInstance = NoExpander()
-    biRankerInstance = CoreMMR()
+    #biRankerInstance = CoreMMR()
+    #biRankerInstance = SoftMMR()
+    m = dy.ParameterCollection()
+    biRankerInstance = MaLSTMScorer(m, "/home/ubuntu/model_dropout_corrected10", "/home/ubuntu/model_vocab.txt")
+    #biRankerInstance = BiLSTMScorer(m, "/home/ubuntu/bi_lstm_model", "/home/ubuntu/model_vocab.txt")
+    #biRankerInstance = LSTMScorer(m, "/home/ubuntu/model_ind", "/home/ubuntu/model_vocab.txt")
     orderInstance = MajorityCluster()
     fusionInstance = Fusion()
     tilerInstance = Concatenation()
     #tilerInstance = MajorityOrder()
     #tilerInstance = KMeansSimilarityOrderer()
-    pipelineInstance = Pipeline(filePath, expanderInstance, biRankerInstance, orderInstance, fusionInstance ,tilerInstance, model, word_dict, char_dict)
+    pipelineInstance = Pipeline(filePath, expanderInstance, biRankerInstance, orderInstance, fusionInstance ,tilerInstance)
     #pipelineInstance = Pipeline(filePath)
     idealAnswerJson = {}
     idealAnswerJson['questions'] = pipelineInstance.getSummaries()
-    with open('ordered_fusion.json', 'w') as outfile:
+    with open('ordered_fusion_dropout_corrected10.json', 'w') as outfile:
         json.dump(idealAnswerJson, outfile)
     #print json.dumps(idealAnswerJson)
