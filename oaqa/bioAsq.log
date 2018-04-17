@@ -1,0 +1,210 @@
+2018-04-17 05:40:21,753 - bioAsqLogger - INFO - Loaded training data
+2018-04-17 05:40:21,753 - bioAsqLogger - INFO - Started summarization pipeline for Question 0
+2018-04-17 05:40:21,754 - bioAsqLogger - INFO - Generated question classification for the question
+2018-04-17 05:40:21,754 - bioAsqLogger - INFO - Performing expansions...
+2018-04-17 05:40:21,754 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,784 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,784 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,784 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,784 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,784 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,784 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,785 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,785 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,785 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,785 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,785 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,785 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,785 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,785 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,786 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,786 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,786 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,786 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,786 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,786 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,786 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,787 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:21,787 - bioAsqLogger - INFO - Updated the question with expander output...
+2018-04-17 05:40:22,395 - bioAsqLogger - INFO - Performed Core MMR
+2018-04-17 05:40:22,396 - bioAsqLogger - INFO - Retrieved ranked list of sentences...
+2018-04-17 05:40:22,399 - bioAsqLogger - INFO - Tiling sentences to get alternative summary...
+2018-04-17 05:40:22,403 - bioAsqLogger - INFO - Tiled sentences by concatenating
+2018-04-17 05:40:23,221 - bioAsqLogger - INFO - Inserted ideal answer into the json dictionary
+2018-04-17 05:40:23,221 - bioAsqLogger - INFO - Started summarization pipeline for Question 1
+2018-04-17 05:40:23,222 - bioAsqLogger - INFO - Generated question classification for the question
+2018-04-17 05:40:23,222 - bioAsqLogger - INFO - Performing expansions...
+2018-04-17 05:40:23,222 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,222 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,222 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,222 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,222 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,222 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,222 - bioAsqLogger - INFO - Updated the question with expander output...
+2018-04-17 05:40:23,246 - bioAsqLogger - INFO - Performed Core MMR
+2018-04-17 05:40:23,246 - bioAsqLogger - INFO - Retrieved ranked list of sentences...
+2018-04-17 05:40:23,247 - bioAsqLogger - INFO - Tiling sentences to get alternative summary...
+2018-04-17 05:40:23,250 - bioAsqLogger - INFO - Tiled sentences by concatenating
+2018-04-17 05:40:23,355 - bioAsqLogger - INFO - Inserted ideal answer into the json dictionary
+2018-04-17 05:40:23,355 - bioAsqLogger - INFO - Started summarization pipeline for Question 2
+2018-04-17 05:40:23,355 - bioAsqLogger - INFO - Generated question classification for the question
+2018-04-17 05:40:23,355 - bioAsqLogger - INFO - Performing expansions...
+2018-04-17 05:40:23,355 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,356 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,356 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,356 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,356 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,356 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,356 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,356 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,356 - bioAsqLogger - INFO - Updated the question with expander output...
+2018-04-17 05:40:23,406 - bioAsqLogger - INFO - Performed Core MMR
+2018-04-17 05:40:23,406 - bioAsqLogger - INFO - Retrieved ranked list of sentences...
+2018-04-17 05:40:23,408 - bioAsqLogger - INFO - Tiling sentences to get alternative summary...
+2018-04-17 05:40:23,410 - bioAsqLogger - INFO - Tiled sentences by concatenating
+2018-04-17 05:40:23,753 - bioAsqLogger - INFO - Inserted ideal answer into the json dictionary
+2018-04-17 05:40:23,754 - bioAsqLogger - INFO - Started summarization pipeline for Question 3
+2018-04-17 05:40:23,754 - bioAsqLogger - INFO - Generated question classification for the question
+2018-04-17 05:40:23,754 - bioAsqLogger - INFO - Performing expansions...
+2018-04-17 05:40:23,754 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,754 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,754 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,754 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,754 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,754 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,754 - bioAsqLogger - INFO - Updated the question with expander output...
+2018-04-17 05:40:23,777 - bioAsqLogger - INFO - Performed Core MMR
+2018-04-17 05:40:23,777 - bioAsqLogger - INFO - Retrieved ranked list of sentences...
+2018-04-17 05:40:23,778 - bioAsqLogger - INFO - Tiling sentences to get alternative summary...
+2018-04-17 05:40:23,780 - bioAsqLogger - INFO - Tiled sentences by concatenating
+2018-04-17 05:40:23,974 - bioAsqLogger - INFO - Inserted ideal answer into the json dictionary
+2018-04-17 05:40:23,975 - bioAsqLogger - INFO - Started summarization pipeline for Question 4
+2018-04-17 05:40:23,975 - bioAsqLogger - INFO - Generated question classification for the question
+2018-04-17 05:40:23,975 - bioAsqLogger - INFO - Performing expansions...
+2018-04-17 05:40:23,975 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,975 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,975 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,975 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,975 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,975 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,976 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,976 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,976 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,976 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,976 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,976 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,976 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:23,976 - bioAsqLogger - INFO - Updated the question with expander output...
+2018-04-17 05:40:24,190 - bioAsqLogger - INFO - Performed Core MMR
+2018-04-17 05:40:24,191 - bioAsqLogger - INFO - Retrieved ranked list of sentences...
+2018-04-17 05:40:24,193 - bioAsqLogger - INFO - Tiling sentences to get alternative summary...
+2018-04-17 05:40:24,197 - bioAsqLogger - INFO - Tiled sentences by concatenating
+2018-04-17 05:40:24,290 - bioAsqLogger - INFO - Inserted ideal answer into the json dictionary
+2018-04-17 05:40:24,290 - bioAsqLogger - INFO - Started summarization pipeline for Question 5
+2018-04-17 05:40:24,291 - bioAsqLogger - INFO - Generated question classification for the question
+2018-04-17 05:40:24,291 - bioAsqLogger - INFO - Performing expansions...
+2018-04-17 05:40:24,291 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,291 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,291 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,291 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,291 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,291 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,291 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,292 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,292 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,292 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,292 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,292 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,292 - bioAsqLogger - INFO - Updated the question with expander output...
+2018-04-17 05:40:24,470 - bioAsqLogger - INFO - Performed Core MMR
+2018-04-17 05:40:24,470 - bioAsqLogger - INFO - Retrieved ranked list of sentences...
+2018-04-17 05:40:24,473 - bioAsqLogger - INFO - Tiling sentences to get alternative summary...
+2018-04-17 05:40:24,477 - bioAsqLogger - INFO - Tiled sentences by concatenating
+2018-04-17 05:40:24,604 - bioAsqLogger - INFO - Inserted ideal answer into the json dictionary
+2018-04-17 05:40:24,604 - bioAsqLogger - INFO - Started summarization pipeline for Question 6
+2018-04-17 05:40:24,604 - bioAsqLogger - INFO - Generated question classification for the question
+2018-04-17 05:40:24,605 - bioAsqLogger - INFO - Performing expansions...
+2018-04-17 05:40:24,605 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,605 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,605 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,605 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,605 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,605 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,605 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,606 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,606 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,606 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,606 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,606 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,606 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,606 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,607 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,607 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,607 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,607 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,607 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,607 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,607 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,608 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,608 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,608 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,608 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,608 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,608 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,608 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,608 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,609 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:24,609 - bioAsqLogger - INFO - Updated the question with expander output...
+2018-04-17 05:40:25,425 - bioAsqLogger - INFO - Performed Core MMR
+2018-04-17 05:40:25,425 - bioAsqLogger - INFO - Retrieved ranked list of sentences...
+2018-04-17 05:40:25,427 - bioAsqLogger - INFO - Tiling sentences to get alternative summary...
+2018-04-17 05:40:25,431 - bioAsqLogger - INFO - Tiled sentences by concatenating
+2018-04-17 05:40:25,534 - bioAsqLogger - INFO - Inserted ideal answer into the json dictionary
+2018-04-17 05:40:25,534 - bioAsqLogger - INFO - Started summarization pipeline for Question 7
+2018-04-17 05:40:25,534 - bioAsqLogger - INFO - Generated question classification for the question
+2018-04-17 05:40:25,534 - bioAsqLogger - INFO - Performing expansions...
+2018-04-17 05:40:25,534 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,534 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,535 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,535 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,535 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,535 - bioAsqLogger - INFO - Updated the question with expander output...
+2018-04-17 05:40:25,547 - bioAsqLogger - INFO - Performed Core MMR
+2018-04-17 05:40:25,547 - bioAsqLogger - INFO - Retrieved ranked list of sentences...
+2018-04-17 05:40:25,549 - bioAsqLogger - INFO - Tiling sentences to get alternative summary...
+2018-04-17 05:40:25,551 - bioAsqLogger - INFO - Tiled sentences by concatenating
+2018-04-17 05:40:25,645 - bioAsqLogger - INFO - Inserted ideal answer into the json dictionary
+2018-04-17 05:40:25,645 - bioAsqLogger - INFO - Started summarization pipeline for Question 8
+2018-04-17 05:40:25,645 - bioAsqLogger - INFO - Generated question classification for the question
+2018-04-17 05:40:25,645 - bioAsqLogger - INFO - Performing expansions...
+2018-04-17 05:40:25,645 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,646 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,646 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,646 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,646 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,646 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,646 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,646 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,646 - bioAsqLogger - INFO - Updated the question with expander output...
+2018-04-17 05:40:25,698 - bioAsqLogger - INFO - Performed Core MMR
+2018-04-17 05:40:25,698 - bioAsqLogger - INFO - Retrieved ranked list of sentences...
+2018-04-17 05:40:25,699 - bioAsqLogger - INFO - Tiling sentences to get alternative summary...
+2018-04-17 05:40:25,702 - bioAsqLogger - INFO - Tiled sentences by concatenating
+2018-04-17 05:40:25,977 - bioAsqLogger - INFO - Inserted ideal answer into the json dictionary
+2018-04-17 05:40:25,977 - bioAsqLogger - INFO - Started summarization pipeline for Question 9
+2018-04-17 05:40:25,977 - bioAsqLogger - INFO - Generated question classification for the question
+2018-04-17 05:40:25,977 - bioAsqLogger - INFO - Performing expansions...
+2018-04-17 05:40:25,977 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,977 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,977 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,977 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,978 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,978 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,978 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,978 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,978 - bioAsqLogger - INFO - In getExpansions function of NoExpander
+2018-04-17 05:40:25,978 - bioAsqLogger - INFO - Updated the question with expander output...
+2018-04-17 05:40:26,042 - bioAsqLogger - INFO - Performed Core MMR
+2018-04-17 05:40:26,042 - bioAsqLogger - INFO - Retrieved ranked list of sentences...
+2018-04-17 05:40:26,042 - bioAsqLogger - INFO - Tiling sentences to get alternative summary...
+2018-04-17 05:40:26,044 - bioAsqLogger - INFO - Tiled sentences by concatenating
