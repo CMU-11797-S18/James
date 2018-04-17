@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import unicodedata
 import torch
 from torch import LongTensor, FloatTensor, ByteTensor
@@ -10,7 +11,7 @@ import re
 def get_chars_ind_lst(char_dict, word_lst):
     chars = []
     for w in word_lst:
-        chars.append([char_dict[c] for c in w])
+        chars.append([char_dict[c.decode('utf-8')] for c in w])
     return chars
 
 class Dictionary:

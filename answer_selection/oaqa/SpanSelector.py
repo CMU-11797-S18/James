@@ -18,10 +18,10 @@ class SpanSelector():
         best_answer = None
         best_answer_prob = None
 
-        q_words = [word_dict[w] for w in word_tokenize(question)]
+        q_words = [word_dict[w.decode('utf-8')] for w in word_tokenize(question)]
         q_chars = get_chars_ind_lst(char_dict, word_tokenize(question))
         for snippet in snippets:
-            d_words = [word_dict[w] for w in word_tokenize(snippet)]
+            d_words = [word_dict[w.decode('utf-8')] for w in word_tokenize(snippet)]
             d_chars = get_chars_ind_lst(char_dict, word_tokenize(snippet))
             pred = model(q_words, d_words, q_chars, d_chars)
             pred_prob = np.max(pred[0].data.cpu().numpy())
@@ -30,5 +30,8 @@ class SpanSelector():
             if best_answer_prob is None or pred_prob > best_answer_prob:
                 best_answer_prob = pred_prob
                 best_answer = ' '.join(word_tokenize(snippet)[start:end + 1])
+        if best_answer is None:
+            print ('-----NULL ANSWER')
+            return '', 0
 
         return best_answer, best_answer_prob

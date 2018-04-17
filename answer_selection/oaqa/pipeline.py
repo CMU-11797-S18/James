@@ -166,7 +166,6 @@ class Pipeline(object):
             rankedSnippets = []
             print question['body']
             for sentence in rankedSentencesList:
-                print sentence
                 try:
                     rankedSentencesListOriginal.append(ExpansiontoOriginal[sentence.strip()])
                     rankedSnippets.append(SentencetoSnippet[sentence.strip()])
@@ -176,6 +175,7 @@ class Pipeline(object):
             #EXECUTION OF TILING
             #tiler_info = {'max_length': 200, 'max_tokens': 200, 'k': 2, 'max_iter': 20}
             #orderedList = self.orderInstance.orderSentences(rankedSentencesListOriginal, rankedSnippets, tiler_info)
+            #fusedList = orderedList
             #fusedList = self.fusionInstance.tileSentences(orderedList, 200)
             logger.info('Tiling sentences to get alternative summary...')
             
@@ -188,9 +188,18 @@ class Pipeline(object):
             #finalSummary = concat_inst.tileSentences(fusedList, 200) #pred_length*5
 
             #question['ideal_answer'] = finalSummary
-
-            exact_answer, exact_answer_prob = self.spanSelectorInstance.predict(question['body'], rankedSentencesList[0])
-            question['exact_answer'] = exact_answer
+            #print (finalSummary)
+            
+            candidateSentences = rankedSentencesList[:1]
+            exact_answer, exact_answer_prob = self.spanSelectorInstance.predict(question['body'], candidateSentences)
+            #exact_answer = exact_answer.decode('utf-8')
+            if pred_cat != 'summary':
+                if pred_cat in ['list', 'factoid']:
+                    question['exact_answer'] = [exact_answer]
+                else:
+                    question['exact_answer'] = u'yes'
+            print ('rankedSentencesList:', candidateSentences)
+            print ('answer:', exact_answer)
 
             AnswerQuestion = question
             allAnswerQuestion.append(AnswerQuestion)
@@ -212,6 +221,6 @@ if __name__ == '__main__':
                                 spanSelectorInstance)
     idealAnswerJson = {}
     idealAnswerJson['questions'] = pipelineInstance.getSummaries()
-    with open('ordered_fusion_dropout_corrected10.json', 'w') as outfile:
+    with open('ordered_baseline_answer_selection.json', 'w') as outfile:
         json.dump(idealAnswerJson, outfile)
     #print json.dumps(idealAnswerJson)

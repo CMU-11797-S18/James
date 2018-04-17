@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import unicodedata
 import torch
 from torch import LongTensor, FloatTensor, ByteTensor

@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from io import open
 import torch
 import torch.autograd as autograd
 from torch import LongTensor, FloatTensor, ByteTensor
