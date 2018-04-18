@@ -1,5 +1,6 @@
 import pickle
 import torch
+import dill
 from utils import get_chars_ind_lst, word_tokenize, get_utf8
 import numpy as np
 
