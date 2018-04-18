@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
+import sys
 import torch
+import dill
 import pickle
 import json
 import time
@@ -43,7 +45,7 @@ def set_seed(seed=1):
 def get_train_data(path, bioword_dict=None, gloveword_dict=None, char_dict=None):
     bioword_dict = Dictionary(clean_func=bioclean) if bioword_dict is None else bioword_dict
     char_dict = Dictionary() if char_dict is None else char_dict
-    gloveword_dict = Dictionary() if gloveword_dict is None else gloveword_dict
+    gloveword_dict = Dictionary(clean_func=unicode.lower) if gloveword_dict is None else gloveword_dict
     with open(path, encoding='utf-8') as f:
         data = json.load(f)
 
@@ -54,31 +56,48 @@ def get_train_data(path, bioword_dict=None, gloveword_dict=None, char_dict=None)
     qa_pair = add_span(qa_pair)
     qa_pair = text_to_list(qa_pair)
 
-    bioword_dict = get_word_dict(qa_pair, bioclean, dct=bioword_dict)
-    gloveword_dict = get_word_dict(qa_pair, str.lower, dct=gloveword_dict)
+    bioword_dict = get_word_dict(qa_pair, dct=bioword_dict)
+    gloveword_dict = get_word_dict(qa_pair, dct=gloveword_dict)
     char_dict = get_char_dict(qa_pair, dct=char_dict)
 
     return qa_pair, bioword_dict, char_dict, gloveword_dict
 
 if __name__ == '__main__':
-    train, bioword_dict, char_dict, gloveword_dict = get_train_data(path='../oaqa/input/5b_train.json')
-    test, bioword_dict, char_dict, gloveword_dict = get_train_data('../oaqa/input/5b_test.json', bioword_dict, gloveword_dict, char_dict)
+    set_seed(1)
+    mode = sys.argv[1]
+    if mode == 'bioasq':
+        train_path = '../oaqa/input/5b_train.json'
+        test_path = '../oaqa/input/5b_test.json'
+    else:
+        train_path = '../oaqa/input/msmarco_train.json'
+        test_path = '../oaqa/input/msmarco_test.json'
+    train, bioword_dict, char_dict, gloveword_dict = get_train_data(train_path)
+    test, bioword_dict, char_dict, gloveword_dict = get_train_data(test_path, bioword_dict, gloveword_dict, char_dict)
 
     train, validate = train_test_split(train, test_size=0.2, random_state=32)
 
-    train_flat = formalize_data(flatten_span_list(train), bioword_dict, char_dict)
-    validate_flat = formalize_data(flatten_span_list(validate), bioword_dict, char_dict)
-    test_flat = formalize_data(flatten_span_list(test), bioword_dict, char_dict)
+    if mode == 'bioasq':
+        target_dict = bioword_dict
+        word_embed_dim = 200
+    else:
+        target_dict = gloveword_dict
+        word_embed_dim = 300
+
+    train_flat = formalize_data(flatten_span_list(train), target_dict, char_dict)
+    validate_flat = formalize_data(flatten_span_list(validate), target_dict, char_dict)
+    test_flat = formalize_data(flatten_span_list(test), target_dict, char_dict)
 
     epoch_num = 50
     hidden_dim = 100
-    model = BaselineModel(hidden_dim, 200, len(bioword_dict), len(char_dict))
+    model = BaselineModel(hidden_dim, word_embed_dim, len(bioword_dict), len(char_dict))
     model.cuda()
     model.load_embed_bioasq(bioword_dict, './data/vectors.txt', './data/types.txt')
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-4, momentum=0.9)
 
     evaluate(validate_flat, model, 'validation', bioword_dict, char_dict)
     start = time.time()
+
+    best_acc = 0
 
     for epoch in range(epoch_num):
         print('epoch:', epoch)
@@ -105,11 +124,12 @@ if __name__ == '__main__':
         print('train acc:', np.mean(train_acc))
 
         evaluate(train_flat, model, 'train', bioword_dict, char_dict)
-        evaluate(validate_flat, model, 'validation', bioword_dict, char_dict)
+        dev_acc = evaluate(validate_flat, model, 'validation', bioword_dict, char_dict)
         evaluate(test_flat, model, 'test', bioword_dict, char_dict)
         print('time elapsed:', time.time() - start)
 
-        if epoch == 13:
+        if dev_acc > best_acc:
+            best_acc = dev_acc
             torch.save(model, './model')
 
             with open('word_dict.pkl', 'wb') as output:
@@ -118,6 +138,5 @@ if __name__ == '__main__':
             with open('char_dict.pkl', 'wb') as output:
                 pickle.dump(char_dict, output)
 
-            break
 
 

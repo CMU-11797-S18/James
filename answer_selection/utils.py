@@ -176,20 +176,20 @@ def bioclean(t):
                     .split())
 
 
-def get_word_dict(qa_pair, clean_func, dct=None):
-    def expand_dict(word_lst, dct, clean_func):
+def get_word_dict(qa_pair, dct=None):
+    def expand_dict(word_lst, dct):
         for word in word_lst:
-            dct.add(clean_func(word))
+            dct.add(word)
 
     dct = Dictionary() if dct is None else dct
     original_len = len(dct)
     for (q, a, t, s, span_lst) in qa_pair:
-        expand_dict(q, dct, clean_func)
+        expand_dict(q, dct)
         for ans_lst in a:
             for answer in ans_lst:
-                expand_dict(answer, dct, clean_func)
+                expand_dict(answer, dct)
         for snippet in s:
-            expand_dict(snippet, dct, clean_func)
+            expand_dict(snippet, dct)
     print('word vocabulary from {} to {}'.format(original_len, len(dct)))
     return dct
 
@@ -323,6 +323,7 @@ def evaluate(data, model, dataset_name, word_dict, char_dict):
     global eval_id
     eval_id += 1
     np.save('comparison_{}'.format(eval_id), answer_comparison)
+    return np.mean(accuracy_lst)
 
 
 
