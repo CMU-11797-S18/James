@@ -10,14 +10,12 @@ import nltk
 from io import open
 import re
 from utils import get_qa_pair, add_span, get_word_dict, bioclean, text_to_list, squad_to_bioasq_format
-from utils import evaluate, flatten_span_list, formalize_data, get_char_dict
+from utils import evaluate, flatten_span_list, formalize_data, get_char_dict, Dictionary
 
 from model import BaselineModel
 from sklearn.model_selection import train_test_split
 
-
-if __name__ == '__main__':
-
+def original_script():
     with open('./data/BioASQ-trainingDataset5b.txt', encoding='utf-8') as f:
         data = json.load(f)
 
@@ -27,12 +25,6 @@ if __name__ == '__main__':
     print('adding spans into the qa_pair')
     qa_pair = add_span(qa_pair)
     qa_pair = text_to_list(qa_pair)
-    # # Debugging span extraction
-    # for (snippet, spans) in zip(qa_pair[0][3], qa_pair[0][4]):
-    #     print (spans)
-    #     print (snippet)
-    #     for (start, end) in spans:
-    #         print (snippet[start:end + 1])
 
     bioword_dict = get_word_dict(qa_pair, bioclean)
     char_dict = get_char_dict(qa_pair)
@@ -43,10 +35,40 @@ if __name__ == '__main__':
     test_flat = formalize_data(flatten_span_list(test), bioword_dict, char_dict)
     validate_flat = formalize_data(flatten_span_list(validate), bioword_dict, char_dict)
 
+def set_seed(seed=1):
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)
 
-    torch.manual_seed(1)
-    random.seed(1)
-    np.random.seed(1)
+def get_train_data(path, bioword_dict=None, gloveword_dict=None, char_dict=None):
+    bioword_dict = Dictionary(clean_func=bioclean) if bioword_dict is None else bioword_dict
+    char_dict = Dictionary() if char_dict is None else char_dict
+    gloveword_dict = Dictionary() if gloveword_dict is None else gloveword_dict
+    with open(path, encoding='utf-8') as f:
+        data = json.load(f)
+
+    print('getting qa pair from data')
+    qa_pair = get_qa_pair(data)
+
+    print('adding spans into the qa_pair')
+    qa_pair = add_span(qa_pair)
+    qa_pair = text_to_list(qa_pair)
+
+    bioword_dict = get_word_dict(qa_pair, bioclean, dct=bioword_dict)
+    gloveword_dict = get_word_dict(qa_pair, str.lower, dct=gloveword_dict)
+    char_dict = get_char_dict(qa_pair, dct=char_dict)
+
+    return qa_pair, bioword_dict, char_dict, gloveword_dict
+
+if __name__ == '__main__':
+    train, bioword_dict, char_dict, gloveword_dict = get_train_data(path='../oaqa/input/5b_train.json')
+    test, bioword_dict, char_dict, gloveword_dict = get_train_data('../oaqa/input/5b_test.json', bioword_dict, gloveword_dict, char_dict)
+
+    train, validate = train_test_split(train, test_size=0.2, random_state=32)
+
+    train_flat = formalize_data(flatten_span_list(train), bioword_dict, char_dict)
+    validate_flat = formalize_data(flatten_span_list(validate), bioword_dict, char_dict)
+    test_flat = formalize_data(flatten_span_list(test), bioword_dict, char_dict)
 
     epoch_num = 50
     hidden_dim = 100

@@ -7,6 +7,12 @@ from nltk.tokenize import word_tokenize
 from collections import defaultdict
 import re
 
+def get_utf8(s):
+    try:
+       s.decode('utf-8')
+    except UnicodeError:
+       return s
+    return s.decode('utf-8')
 
 def get_chars_ind_lst(char_dict, word_lst):
     chars = []
@@ -15,7 +21,8 @@ def get_chars_ind_lst(char_dict, word_lst):
     return chars
 
 class Dictionary:
-    def __init__(self):
+    def __init__(self, clean_func=lambda x:x):
+        self.clean_func = clean_func
         dct = dict()
         # NULL for padding, UNK for unknown word
         dct['<NULL>'] = 0
@@ -26,24 +33,25 @@ class Dictionary:
         return len(self.dct)
 
     def __contains__(self, item):
-        item = Dictionary.normalize(item)
+        item = self.normalize(item)
         return item in self.dct
 
     def __setitem__(self, key, value):
-        key = Dictionary.normalize(key)
+        key = self.normalize(key)
         self.dct[key] = value
 
     def __getitem__(self, item):
-        item = Dictionary.normalize(item)
+        item = self.normalize(item)
         return self.dct.get(item, 1)
 
     def add(self, key):
-        key = Dictionary.normalize(key)
+        key = self.normalize(key)
         if key not in self.dct:
             self.dct[key] = len(self.dct)
 
-    @staticmethod
-    def normalize(w):
+    def normalize(self, w):
+        w = self.clean_func(w)
+        w = get_utf8(w)
         return unicodedata.normalize('NFD', w)
 
 
@@ -337,4 +345,19 @@ def predict(model, question, snippets, word_dict, char_dict):
 
     return best_answer, best_answer_prob
 
+def get_accuracy(all_path='./input/BioASQ-trainingDataset5b.json',
+        pred_path='./ordered_baseline_answer_selection.json'):
+    all_qa = get_qa_pair(json.load(open(all_path)))
+    pred_qa = get_qa_pair(json.load(open(pred_path)))
+    questions = [x[0] for x in pred_qa]
+    gold_qa = filter(lambda q: q[0] in questions, all_qa)
+    count = 0
+    for pred_q in pred_qa:
+        ques = pred_q[0]
+        ans = pred_q[1][0][0]
+        for gold_q in gold_qa:
+            if gold_q[0] == ques:
+                count += ans in gold_q[1][0]
+                break
+    print ('accuracy:', count/float(len(questions)))
 
