@@ -1,6 +1,6 @@
 import pickle
 import torch
-from utils import get_chars_ind_lst, word_tokenize
+from utils import get_chars_ind_lst, word_tokenize, get_utf8
 import numpy as np
 
 class SpanSelector():
@@ -10,6 +10,7 @@ class SpanSelector():
         self.word_dict = pickle.load(open(word_dict_path))
         self.char_dict = pickle.load(open(char_dict_path))
 
+
     def predict(self, question, snippets):
         model = self.model
         word_dict = self.word_dict
@@ -18,10 +19,10 @@ class SpanSelector():
         best_answer = None
         best_answer_prob = None
 
-        q_words = [word_dict[w.decode('utf-8')] for w in word_tokenize(question)]
+        q_words = [word_dict[get_utf8(w)] for w in word_tokenize(question)]
         q_chars = get_chars_ind_lst(char_dict, word_tokenize(question))
         for snippet in snippets:
-            d_words = [word_dict[w.decode('utf-8')] for w in word_tokenize(snippet)]
+            d_words = [word_dict[get_utf8(w)] for w in word_tokenize(snippet)]
             d_chars = get_chars_ind_lst(char_dict, word_tokenize(snippet))
             pred = model(q_words, d_words, q_chars, d_chars)
             pred_prob = np.max(pred[0].data.cpu().numpy())

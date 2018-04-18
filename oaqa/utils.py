@@ -8,11 +8,17 @@ from nltk.tokenize import word_tokenize
 from collections import defaultdict
 import re
 
+def get_utf8(s):
+    try:
+       s.decode('utf-8')
+    except UnicodeError:
+       return s
+    return s.decode('utf-8')
 
 def get_chars_ind_lst(char_dict, word_lst):
     chars = []
     for w in word_lst:
-        chars.append([char_dict[c.decode('utf-8')] for c in w])
+        chars.append([char_dict[get_utf8(c)] for c in w])
     return chars
 
 class Dictionary:

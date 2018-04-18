@@ -128,6 +128,8 @@ class Pipeline(object):
                 pred_length = 4
             else:
                 pass
+            if pred_cat != 'factoid':
+                continue
 
 
             modifiedQuestion = copy.copy(question)
@@ -174,9 +176,10 @@ class Pipeline(object):
 
             #EXECUTION OF TILING
             tiler_info = {'max_length': 200, 'max_tokens': 200, 'k': 2, 'max_iter': 20}
+            if len(rankedSentencesList) == 0 or len(rankedSentencesListOriginal) == 0:
+                continue
             orderedList = self.orderInstance.orderSentences(rankedSentencesListOriginal, rankedSnippets, tiler_info)
-            fusedList = orderedList
-            #fusedList = self.fusionInstance.tileSentences(orderedList, 200)
+            fusedList = rankedSentencesList 
             logger.info('Tiling sentences to get alternative summary...')
             
             #EXECUTION OF EVAULATION (To be done)
@@ -184,13 +187,13 @@ class Pipeline(object):
             #goldIdealAnswer, r2, rsu = evaluatorInstance.calculateRouge(question['body'], finalSummary)
 
             #uncomment the following 3 lines for fusion
-            concat_inst = Concatenation()
-            finalSummary = concat_inst.tileSentences(fusedList, 200) #pred_length*5
+            #concat_inst = Concatenation()
+            #finalSummary = concat_inst.tileSentences(fusedList, 200) #pred_length*5
 
-            question['ideal_answer'] = finalSummary
-            print (finalSummary)
+            #question['ideal_answer'] = finalSummary
+            #print (finalSummary)
             
-            candidateSentences = fusedList
+            candidateSentences = rankedSentencesList[:1]
             exact_answer, exact_answer_prob = self.spanSelectorInstance.predict(question['body'], candidateSentences)
             if pred_cat != 'summary':
                 if pred_cat in ['list', 'factoid']:
