@@ -87,7 +87,7 @@ if __name__ == '__main__':
     validate_flat = formalize_data(flatten_span_list(validate), target_dict, char_dict)
     test_flat = formalize_data(flatten_span_list(test), target_dict, char_dict)
 
-    epoch_num = 50
+    epoch_num = 30
     hidden_dim = 100
     model = BaselineModel(hidden_dim, word_embed_dim, len(bioword_dict), len(char_dict))
     model.cuda()

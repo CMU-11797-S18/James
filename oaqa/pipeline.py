@@ -218,7 +218,8 @@ if __name__ == '__main__':
     orderInstance = MajorityCluster()
     fusionInstance = Fusion()
     tilerInstance = Concatenation()
-    spanSelectorInstance = SpanSelector()
+    spanSelectorInstance = SpanSelector('/home/ubuntu/model',
+    '/home/ubuntu/word_dict.pkl', '/home/ubuntu/char_dict.pkl')
     pipelineInstance = Pipeline(filePath, expanderInstance, biRankerInstance, orderInstance, fusionInstance ,tilerInstance,
                                 spanSelectorInstance)
     idealAnswerJson = {}

@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 import unicodedata
-import json
 import torch
 from torch import LongTensor, FloatTensor, ByteTensor
 import numpy as np
@@ -18,11 +17,12 @@ def get_utf8(s):
 def get_chars_ind_lst(char_dict, word_lst):
     chars = []
     for w in word_lst:
-        chars.append([char_dict[get_utf8(c)] for c in w])
+        chars.append([char_dict[c] for c in w])
     return chars
 
 class Dictionary:
-    def __init__(self):
+    def __init__(self, clean_func=lambda x:x):
+        self.clean_func = clean_func
         dct = dict()
         # NULL for padding, UNK for unknown word
         dct['<NULL>'] = 0
@@ -33,24 +33,25 @@ class Dictionary:
         return len(self.dct)
 
     def __contains__(self, item):
-        item = Dictionary.normalize(item)
+        item = self.normalize(item)
         return item in self.dct
 
     def __setitem__(self, key, value):
-        key = Dictionary.normalize(key)
+        key = self.normalize(key)
         self.dct[key] = value
 
     def __getitem__(self, item):
-        item = Dictionary.normalize(item)
+        item = self.normalize(item)
         return self.dct.get(item, 1)
 
     def add(self, key):
-        key = Dictionary.normalize(key)
+        key = self.normalize(key)
         if key not in self.dct:
             self.dct[key] = len(self.dct)
 
-    @staticmethod
-    def normalize(w):
+    def normalize(self, w):
+        w = self.clean_func(w)
+        w = get_utf8(w)
         return unicodedata.normalize('NFD', w)
 
 
@@ -175,20 +176,20 @@ def bioclean(t):
                     .split())
 
 
-def get_word_dict(qa_pair, clean_func, dct=None):
-    def expand_dict(word_lst, dct, clean_func):
+def get_word_dict(qa_pair, dct=None):
+    def expand_dict(word_lst, dct):
         for word in word_lst:
-            dct.add(clean_func(word))
+            dct.add(word)
 
     dct = Dictionary() if dct is None else dct
     original_len = len(dct)
     for (q, a, t, s, span_lst) in qa_pair:
-        expand_dict(q, dct, clean_func)
+        expand_dict(q, dct)
         for ans_lst in a:
             for answer in ans_lst:
-                expand_dict(answer, dct, clean_func)
+                expand_dict(answer, dct)
         for snippet in s:
-            expand_dict(snippet, dct, clean_func)
+            expand_dict(snippet, dct)
     print('word vocabulary from {} to {}'.format(original_len, len(dct)))
     return dct
 
@@ -322,6 +323,7 @@ def evaluate(data, model, dataset_name, word_dict, char_dict):
     global eval_id
     eval_id += 1
     np.save('comparison_{}'.format(eval_id), answer_comparison)
+    return np.mean(accuracy_lst)
 
 
 
@@ -343,7 +345,6 @@ def predict(model, question, snippets, word_dict, char_dict):
             best_answer = ' '.join(word_tokenize(snippet)[start:end + 1])
 
     return best_answer, best_answer_prob
-
 
 def get_accuracy(all_path='./input/BioASQ-trainingDataset5b.json',
         pred_path='./ordered_baseline_answer_selection.json'):

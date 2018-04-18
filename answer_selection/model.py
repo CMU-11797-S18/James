@@ -145,4 +145,4 @@ class BaselineModel(nn.Module):
 
         # (batch_size, cseq_len, cseq_len)
         span_prob = end_prob * start_prob
-        return F.normalize(span_prob.view(self.batch_size, -1), dim=1, p=1)
+        return span_prob.view(self.batch_size, -1)
