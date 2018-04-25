@@ -37,6 +37,7 @@ def original_script():
     test_flat = formalize_data(flatten_span_list(test), bioword_dict, char_dict)
     validate_flat = formalize_data(flatten_span_list(validate), bioword_dict, char_dict)
 
+
 def set_seed(seed=1):
     torch.manual_seed(seed)
     random.seed(seed)
@@ -87,11 +88,11 @@ if __name__ == '__main__':
     validate_flat = formalize_data(flatten_span_list(validate), target_dict, char_dict)
     test_flat = formalize_data(flatten_span_list(test), target_dict, char_dict)
 
-    epoch_num = 30
+    epoch_num = 10
     hidden_dim = 100
     model = BaselineModel(hidden_dim, word_embed_dim, len(bioword_dict), len(char_dict))
     model.cuda()
-    model.load_embed_bioasq(bioword_dict, './data/vectors.txt', './data/types.txt')
+    model.load_embed_bioasq(bioword_dict, 'vectors.txt', 'types.txt')
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-4, momentum=0.9)
 
     evaluate(validate_flat, model, 'validation', bioword_dict, char_dict)
@@ -102,7 +103,7 @@ if __name__ == '__main__':
     for epoch in range(epoch_num):
         print('epoch:', epoch)
         model.train()
-        # random.shuffle(train_flat)
+        random.shuffle(train_flat)
 
         train_acc = []
         train_loss = []
@@ -123,12 +124,13 @@ if __name__ == '__main__':
         print('train loss:', np.mean(train_loss))
         print('train acc:', np.mean(train_acc))
 
-        evaluate(train_flat, model, 'train', bioword_dict, char_dict)
+        #evaluate(train_flat, model, 'train', bioword_dict, char_dict)
         dev_acc = evaluate(validate_flat, model, 'validation', bioword_dict, char_dict)
         evaluate(test_flat, model, 'test', bioword_dict, char_dict)
         print('time elapsed:', time.time() - start)
 
-        if dev_acc > best_acc:
+        if epoch >= 5 and dev_acc > best_acc:
+            print ('saving models...')
             best_acc = dev_acc
             torch.save(model, './model')
 
@@ -137,6 +139,8 @@ if __name__ == '__main__':
 
             with open('char_dict.pkl', 'wb') as output:
                 pickle.dump(char_dict, output)
+        print ()
+
 
 
 

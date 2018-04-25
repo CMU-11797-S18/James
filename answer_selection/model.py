@@ -44,6 +44,7 @@ class BaselineModel(nn.Module):
     def load_embed_bioasq(self, w_dct, vec_path, type_path):
         embedding = self.word_embeddings.weight.data
         print('loading embeddings...')
+        print(vec_path, type_path)
         w2v_lst = defaultdict(list)
         for word_line, vec_line in zip(open(type_path, 'r', encoding='utf-8'), open(vec_path, 'r', encoding='utf-8')):
             word = word_line.strip('\n')
@@ -145,4 +146,4 @@ class BaselineModel(nn.Module):
 
         # (batch_size, cseq_len, cseq_len)
         span_prob = end_prob * start_prob
-        return span_prob.view(self.batch_size, -1)
+        return F.normalize(span_prob.view(self.batch_size, -1), dim=1, p=1)

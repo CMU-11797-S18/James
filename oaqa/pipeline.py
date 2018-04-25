@@ -1,3 +1,4 @@
+import utils
 from flask import Flask, request, abort, render_template
 from flask import jsonify, render_template
 import sys
@@ -193,15 +194,16 @@ class Pipeline(object):
             #question['ideal_answer'] = finalSummary
             #print (finalSummary)
             
-            candidateSentences = rankedSentencesList[:1]
+            candidateSentences = [rankedSnippets[0]['text']]
             exact_answer, exact_answer_prob = self.spanSelectorInstance.predict(question['body'], candidateSentences)
             if pred_cat != 'summary':
                 if pred_cat in ['list', 'factoid']:
                     question['exact_answer'] = [exact_answer]
                 else:
                     question['exact_answer'] = u'yes'
-            print ('rankedSentencesList:', candidateSentences)
+            #print ('candidates:', candidateSentences)
             print ('answer:', exact_answer)
+            print ()
 
             AnswerQuestion = question
             allAnswerQuestion.append(AnswerQuestion)
@@ -210,11 +212,12 @@ class Pipeline(object):
         return allAnswerQuestion
 
 if __name__ == '__main__':
+    pred_path = 'ordered_MaLSTM_answer_selection.json'
     filePath = sys.argv[1]
     expanderInstance = NoExpander()
-    biRankerInstance = CoreMMR()
-    #m = dy.ParameterCollection()
-    #biRankerInstance = MaLSTMScorer(m, "/home/ubuntu/model_dropout_corrected20", "/home/ubuntu/model_vocab.txt")
+    #biRankerInstance = CoreMMR()
+    m = dy.ParameterCollection()
+    biRankerInstance = MaLSTMScorer(m, "/home/ubuntu/5b_model_20", "/home/ubuntu/model_vocab.txt")
     orderInstance = MajorityCluster()
     fusionInstance = Fusion()
     tilerInstance = Concatenation()
@@ -224,6 +227,7 @@ if __name__ == '__main__':
                                 spanSelectorInstance)
     idealAnswerJson = {}
     idealAnswerJson['questions'] = pipelineInstance.getSummaries()
-    with open('ordered_MaLSTM_answer_selection.json', 'w') as outfile:
+    with open(pred_path, 'w') as outfile:
         json.dump(idealAnswerJson, outfile)
+    print (utils.get_accuracy(filePath, pred_path))
     #print json.dumps(idealAnswerJson)

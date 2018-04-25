@@ -317,7 +317,7 @@ def evaluate(data, model, dataset_name, word_dict, char_dict):
         best_answer_prob_list.append(best_answer_prob)
         best_answer_list.append(best_answer)
         accuracy_lst.append(best_answer in answers)
-        answer_comparison.append([best_answer, answers])
+        answer_comparison.append([question, best_answer, answers, snippets])
     print(dataset_name, 'pick one accuracy:{}/{}={}'.format(np.sum(accuracy_lst),len(accuracy_lst), np.mean(accuracy_lst)))
 
     global eval_id
