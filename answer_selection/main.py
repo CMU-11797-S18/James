@@ -8,7 +8,6 @@ import time
 import pandas as pd
 import numpy as np
 import random
-import nltk
 from io import open
 import re
 from utils import get_qa_pair, add_span, get_word_dict, bioclean, text_to_list, squad_to_bioasq_format, load_embedding
