@@ -100,7 +100,7 @@ if __name__ == '__main__':
     if mode == 'bioasq':
         model.load_embed_bioasq(target_dict, 'vectors.txt', 'types.txt')
     else:
-        w2embed = load_embedding(target_dict, '../data/glove.6B.{}d.txt'.format(word_embed_dim))
+        w2embed = load_embedding(target_dict, '../oaqa/input/glove.6B.{}d.txt'.format(word_embed_dim))
         for w, embedding in w2embed.items():
             model.word_embeddings.weight.data[gloveword_dict[w]].copy_(torch.from_numpy(embedding.astype('float32')))
 
