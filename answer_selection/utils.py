@@ -117,6 +117,30 @@ def get_qa_pair(data, q_types=['factoid']):
     return qa_pair
 
 
+def normalize(x):
+    return unicodedata.normalize('NFD', x)
+
+
+def load_embedding(word_dict, embedding_file_path):
+    w2embed = defaultdict(list)
+    with open(embedding_file_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip('\n')
+            info = line.split(' ')
+            w = normalize(info[0])
+            if w in word_dict:
+                vec = [float(x) for x in info[1:]]
+                w2embed[w].append(vec)
+    for w, vec_lst in w2embed.items():
+        w2embed[w] = np.mean(vec_lst, axis=0).astype('float32')
+    print ('load embedding for {}/{} words'.format(len(w2embed), len(word_dict)))
+    return w2embed
+
+
+def get_i2w(w2i):
+    return dict((v, k) for k, v in w2i.items())
+
+
 def separate_punctuation_by_space(text):
     return ' '.join(word_tokenize(text))
 

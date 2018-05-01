@@ -11,7 +11,7 @@ import random
 import nltk
 from io import open
 import re
-from utils import get_qa_pair, add_span, get_word_dict, bioclean, text_to_list, squad_to_bioasq_format
+from utils import get_qa_pair, add_span, get_word_dict, bioclean, text_to_list, squad_to_bioasq_format, load_embedding
 from utils import evaluate, flatten_span_list, formalize_data, get_char_dict, Dictionary
 
 from model import BaselineModel
@@ -70,8 +70,8 @@ if __name__ == '__main__':
         train_path = '../oaqa/input/5b_train.json'
         test_path = '../oaqa/input/5b_test.json'
     else:
-        train_path = '../oaqa/input/msmarco_train.json'
-        test_path = '../oaqa/input/msmarco_test.json'
+        train_path = '../oaqa/input/msmarco_test_train.json'
+        test_path = '../oaqa/input/msmarco_test_test.json'
     train, bioword_dict, char_dict, gloveword_dict = get_train_data(train_path)
     test, bioword_dict, char_dict, gloveword_dict = get_train_data(test_path, bioword_dict, gloveword_dict, char_dict)
 
@@ -90,10 +90,17 @@ if __name__ == '__main__':
 
     epoch_num = 10
     hidden_dim = 100
-    model = BaselineModel(hidden_dim, word_embed_dim, len(bioword_dict), len(char_dict))
+    model = BaselineModel(hidden_dim, word_embed_dim, len(target_dict), len(char_dict))
     model.cuda()
-    model.load_embed_bioasq(bioword_dict, 'vectors.txt', 'types.txt')
+
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-4, momentum=0.9)
+
+    if mode == 'bioasq':
+        model.load_embed_bioasq(bioword_dict, 'vectors.txt', 'types.txt')
+    else:
+        w2embed = load_embedding(gloveword_dict, '../data/glove.6B.{}d.txt'.format(word_embed_dim))
+        for w, embedding in w2embed.items():
+            model.word_embeddings.weight.data[gloveword_dict[w]].copy_(torch.from_numpy(embedding.astype('float32')))
 
     evaluate(validate_flat, model, 'validation', bioword_dict, char_dict)
     start = time.time()
