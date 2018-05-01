@@ -103,6 +103,7 @@ if __name__ == '__main__':
         w2embed = load_embedding(target_dict, '../oaqa/input/glove.6B.{}d.txt'.format(word_embed_dim))
         for w, embedding in w2embed.items():
             model.word_embeddings.weight.data[gloveword_dict[w]].copy_(torch.from_numpy(embedding.astype('float32')))
+    model.word_embeddings.weight.requires_grad = False
 
     evaluate(validate_flat, model, 'validation', target_dict, char_dict)
     start = time.time()
