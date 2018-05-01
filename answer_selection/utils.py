@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 import unicodedata
+from io import open
 import torch
 from torch import LongTensor, FloatTensor, ByteTensor
 import numpy as np
