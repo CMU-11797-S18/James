@@ -8,7 +8,6 @@ import time
 import pandas as pd
 import numpy as np
 import random
-import nltk
 from io import open
 import re
 from utils import get_qa_pair, add_span, get_word_dict, bioclean, text_to_list, squad_to_bioasq_format, load_embedding
@@ -74,6 +73,7 @@ if __name__ == '__main__':
         test_path = '../oaqa/input/msmarco_test_test.json'
     train, bioword_dict, char_dict, gloveword_dict = get_train_data(train_path)
     test, bioword_dict, char_dict, gloveword_dict = get_train_data(test_path, bioword_dict, gloveword_dict, char_dict)
+    bioasq_test, bioword_dict, char_dict, gloveword_dict = get_train_data('../oaqa/input/5b_test.json', bioword_dict, gloveword_dict, char_dict)
 
     train, validate = train_test_split(train, test_size=0.2, random_state=32)
 
@@ -87,22 +87,25 @@ if __name__ == '__main__':
     train_flat = formalize_data(flatten_span_list(train), target_dict, char_dict)
     validate_flat = formalize_data(flatten_span_list(validate), target_dict, char_dict)
     test_flat = formalize_data(flatten_span_list(test), target_dict, char_dict)
+    bioasq_test_flat = formalize_data(flatten_span_list(bioasq_test), target_dict, char_dict)
 
     epoch_num = 10
     hidden_dim = 100
     model = BaselineModel(hidden_dim, word_embed_dim, len(target_dict), len(char_dict))
     model.cuda()
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=1e-4, momentum=0.9)
+    #optimizer = torch.optim.SGD(model.parameters(), lr=1e-4, momentum=0.9)
+    optimizer = torch.optim.Adam(model.parameters())
 
     if mode == 'bioasq':
-        model.load_embed_bioasq(bioword_dict, 'vectors.txt', 'types.txt')
+        model.load_embed_bioasq(target_dict, 'vectors.txt', 'types.txt')
     else:
-        w2embed = load_embedding(gloveword_dict, '../data/glove.6B.{}d.txt'.format(word_embed_dim))
+        w2embed = load_embedding(target_dict, '../oaqa/input/glove.6B.{}d.txt'.format(word_embed_dim))
         for w, embedding in w2embed.items():
             model.word_embeddings.weight.data[gloveword_dict[w]].copy_(torch.from_numpy(embedding.astype('float32')))
+    model.word_embeddings.weight.requires_grad = False
 
-    evaluate(validate_flat, model, 'validation', bioword_dict, char_dict)
+    evaluate(validate_flat, model, 'validation', target_dict, char_dict)
     start = time.time()
 
     best_acc = 0
@@ -126,14 +129,17 @@ if __name__ == '__main__':
             pred_index = np.argmax(pred[0].data.cpu())
             train_acc.append(pred_index == index)
             train_loss.append(loss.data.cpu()[0])
+            torch.nn.utils.clip_grad_norm(model.parameters(), 1)
+
             optimizer.step()
 
         print('train loss:', np.mean(train_loss))
         print('train acc:', np.mean(train_acc))
 
         #evaluate(train_flat, model, 'train', bioword_dict, char_dict)
-        dev_acc = evaluate(validate_flat, model, 'validation', bioword_dict, char_dict)
-        evaluate(test_flat, model, 'test', bioword_dict, char_dict)
+        dev_acc = evaluate(validate_flat, model, 'validation', target_dict, char_dict)
+        evaluate(test_flat, model, 'test', target_dict, char_dict)
+        evaluate(bioasq_test_flat, model, 'bioasq test', target_dict, char_dict)
         print('time elapsed:', time.time() - start)
 
         if epoch >= 5 and dev_acc > best_acc:
@@ -142,7 +148,7 @@ if __name__ == '__main__':
             torch.save(model, './model')
 
             with open('word_dict.pkl', 'wb') as output:
-                pickle.dump(bioword_dict, output)
+                pickle.dump(target_dict, output)
 
             with open('char_dict.pkl', 'wb') as output:
                 pickle.dump(char_dict, output)

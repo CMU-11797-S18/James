@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 import unicodedata
+from io import open
 import torch
 from torch import LongTensor, FloatTensor, ByteTensor
 import numpy as np
@@ -178,7 +179,7 @@ def add_span(qa_pair):
         if len(new_span_lst):
             new_qa_pair.append([q, a, t, new_s, new_span_lst])
     print('{}/{}={} question have exact answer in span'.format(len(new_qa_pair), len(qa_pair),
-                                                               len(new_qa_pair) / len(qa_pair)))
+                                                               len(new_qa_pair) / float(len(qa_pair))))
     return new_qa_pair
 
 
@@ -229,7 +230,8 @@ def get_char_dict(qa_pair, dct=None):
     for (q, a, t, s, span_lst) in qa_pair:
         expand_dict(q, dct)
         for ans_lst in a:
-            expand_dict(ans_lst, dct)
+            for ans in ans_lst:
+                expand_dict(ans, dct)
         for snippet in s:
             expand_dict(snippet, dct)
     print('char vocabulary from {} to {}'.format(original_len, len(dct)))
