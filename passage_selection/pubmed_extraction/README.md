@@ -1,0 +1,1 @@
+These files were used to extract the abstracts text, titles, and ID numbers from the XML-formatted PubMed data. The results of extraction have been uploaded to Amazon S3, and were used to generate some of the training data for the passage selection model.
